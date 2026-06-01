@@ -93,7 +93,6 @@ const Login = () => {
             color: '#94a3b8', fontSize: '0.875rem', textDecoration: 'none',
           }}
         >
-          ← Volver al Inicio
         </Link>
       </div>
 
@@ -104,7 +103,7 @@ const Login = () => {
       }}>
 
         {/* Logo + Título (Cliqueable) */}
-        <Link 
+        <Link
           to={isAuthenticated ? (role === 'Administrador' ? '/admin/inicio' : '/cliente/inicio') : '/usuario/inicio'}
           style={{ textDecoration: 'none', display: 'block', textAlign: 'center', marginBottom: '2rem' }}
         >

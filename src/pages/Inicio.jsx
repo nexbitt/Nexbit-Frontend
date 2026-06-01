@@ -177,7 +177,7 @@ const Inicio = () => {
             <div className="hp-trust-stars">
               {[...Array(5)].map((_, i) => <Star key={i} size={13} fill="#111" />)}
             </div>
-            <span className="hp-trust-text">Confiado por cientos de compradores</span>
+            <span className="hp-trust-text"></span>
           </div>
         </div>
       </section>
