@@ -1,21 +1,30 @@
 import { io } from 'socket.io-client';
 
-const getSocket = (repartidorId) => {
-  const socket = io('http://localhost:3000', {
+const SOCKET_URL = 'http://localhost:3000';
+
+let socketInstance = null;
+
+export const connectSocket = (userId, userRole) => {
+  if (socketInstance?.connected) {
+    return socketInstance;
+  }
+  socketInstance = io(SOCKET_URL, {
+    query: { userId, userRole },
+    withCredentials: true,
+    transports: ['websocket', 'polling'],
+  });
+  return socketInstance;
+};
+
+export const connectRepartidorSocket = (repartidorId) => {
+  if (socketInstance?.connected) {
+    return socketInstance;
+  }
+  socketInstance = io(SOCKET_URL, {
     query: { repartidorId },
     withCredentials: true,
     transports: ['websocket', 'polling'],
   });
-  return socket;
-};
-
-let socketInstance = null;
-
-export const connectSocket = (repartidorId) => {
-  if (socketInstance?.connected) {
-    return socketInstance;
-  }
-  socketInstance = getSocket(repartidorId);
   return socketInstance;
 };
 

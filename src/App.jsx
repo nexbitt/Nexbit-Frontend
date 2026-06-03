@@ -37,6 +37,7 @@ import Carrito from './pages/Carrito';
 import Ayuda from './pages/Ayuda';
 import Contacto from './pages/Contacto';
 import Reportes from './pages/Reportes';
+import ConfirmacionPedido from './pages/ConfirmacionPedido';
 
 // Páginas del repartidor
 import InicioRepartidor from './pages/repartidor/InicioRepartidor';
@@ -198,6 +199,7 @@ function AppRoutes() {
           <Route path="productos" element={<Productos variant="usuario" />} />
           <Route path="carrito" element={<Carrito variant="usuario" />} />
           <Route path="pedidos" element={<Pedidos variant="usuario" />} />
+          <Route path="pedidos/:id/confirmar" element={<ConfirmacionPedido variant="usuario" />} />
           <Route path="ayuda" element={<Ayuda />} />
           <Route path="contacto" element={<Contacto />} />
         </Route>
@@ -215,12 +217,13 @@ function AppRoutes() {
         <Route index element={<Navigate to="inicio" replace />} />
         <Route path="inicio" element={<Inicio />} />
         <Route path="productos" element={<Productos variant="cliente" />} />
-        <Route path="carrito" element={<Carrito variant="cliente" />} />
-        <Route path="pedidos" element={<Pedidos variant="cliente" />} />
-        <Route path="ayuda" element={<Ayuda />} />
-        <Route path="contacto" element={<Contacto />} />
-        <Route path="perfil" element={<Perfil />} />
-      </Route>
+          <Route path="carrito" element={<Carrito variant="cliente" />} />
+          <Route path="pedidos" element={<Pedidos variant="cliente" />} />
+          <Route path="pedidos/:id/confirmar" element={<ConfirmacionPedido variant="cliente" />} />
+          <Route path="ayuda" element={<Ayuda />} />
+          <Route path="contacto" element={<Contacto />} />
+          <Route path="perfil" element={<Perfil />} />
+        </Route>
 
       {/* ── Repartidor ────────────────────────────────────── */}
       <Route

@@ -133,12 +133,23 @@ export const CartProvider = ({ children }) => {
   const checkout = async () => {
     if (!isAuthenticated || !usuario_id) return false;
     try {
-      await api.post('/api/pedidos/checkout', { usuario_id });
+      const res = await api.post('/api/pedidos/checkout', { usuario_id });
       setCartItems([]);
-      return true;
+      return { success: true, id_pedido: res.data.id_pedido };
     } catch (err) {
       console.error('Error generando checkout:', err);
-      return false;
+      return { success: false, error: err.response?.data?.message || 'Error al generar pedido' };
+    }
+  };
+
+  const verificarPedidoPendiente = async () => {
+    if (!usuario_id) return null;
+    try {
+      const res = await api.get(`/api/pedidos/usuario/${usuario_id}/verificar-pendiente`);
+      return res.data;
+    } catch (err) {
+      console.error('Error verificando pedido pendiente:', err);
+      return null;
     }
   };
 
@@ -154,6 +165,7 @@ export const CartProvider = ({ children }) => {
       updateQuantity,
       clearCart,
       checkout,
+      verificarPedidoPendiente,
       getCartCount,
       getCartTotal,
       totalItems,

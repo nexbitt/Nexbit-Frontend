@@ -5,9 +5,10 @@
  */
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { Pencil, Trash2, ShoppingCart, Download, Eye, X, Package, AlertTriangle } from 'lucide-react';
+import { Pencil, Trash2, ShoppingCart, Download, Eye, X, Package, AlertTriangle, Upload, CheckCircle, XCircle, AlertCircle, FileImage, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useModalScroll } from '../hooks/useModalScroll';
+import ChatModal from '../components/ChatModal';
 
 const URL_API = "/api/pedidos";
 const URL_USUARIOS = "/api/usuarios";
@@ -24,10 +25,28 @@ const Pedidos = ({ variant }) => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [pedidoDetalle, setPedidoDetalle] = useState(null);
 
+  // Upload comprobante
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadPedidoId, setUploadPedidoId] = useState(null);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadPreview, setUploadPreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Admin: chat con cliente
+  const [showChat, setShowChat] = useState(false);
+  const [chatPedidoId, setChatPedidoId] = useState(null);
+
+  // Admin: comentarios en modal detalle
+  const [adminComment, setAdminComment] = useState('');
+  const [commentSending, setCommentSending] = useState(false);
+
   const navigate = useNavigate();
   const isAdminView = variant === 'admin' || !variant;
   const isGuestView = variant === 'guest';
-  useModalScroll(showModal || showDetailModal);
+  useModalScroll(showModal || showDetailModal || showUploadModal);
 
   // Paginación y búsqueda
   const [searchTerm, setSearchTerm] = useState("");
@@ -85,11 +104,6 @@ const Pedidos = ({ variant }) => {
       }
     }
   };
-
-  useEffect(() => {
-    listar();
-    listarUsuarios();
-  }, [isAdminView]);
 
   const limpiarFormulario = () => {
     setUsuarioId(""); setTotal(0); setEstado('PENDIENTE');
@@ -160,6 +174,99 @@ const Pedidos = ({ variant }) => {
         });
     }
   };
+
+  // --- Subir comprobante ---
+  const abrirUpload = (pedidoId) => {
+    setUploadPedidoId(pedidoId);
+    setUploadFile(null);
+    setUploadPreview(null);
+    setUploadError('');
+    setShowUploadModal(true);
+  };
+
+  const handleUploadFileChange = (e) => {
+    const selected = e.target.files[0];
+    if (!selected) return;
+    if (!['image/jpeg', 'image/png', 'image/jpg'].includes(selected.type)) {
+      setUploadError('Solo se permiten imágenes JPG o PNG');
+      return;
+    }
+    if (selected.size > 3 * 1024 * 1024) {
+      setUploadError('La imagen no debe superar los 3MB');
+      return;
+    }
+    setUploadError('');
+    setUploadFile(selected);
+    setUploadPreview(URL.createObjectURL(selected));
+  };
+
+  const handleUploadSubmit = async () => {
+    if (!uploadFile || !uploadPedidoId) return;
+    setUploading(true);
+    setUploadError('');
+    try {
+      const formData = new FormData();
+      formData.append('comprobante', uploadFile);
+      await api.post(`${URL_API}/${uploadPedidoId}/subir-comprobante`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setShowUploadModal(false);
+      listar();
+      alert('Comprobante enviado con éxito. El administrador lo revisará.');
+    } catch (err) {
+      setUploadError(err.response?.data?.message || 'Error al subir comprobante');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const aprobarPago = async (pedidoId) => {
+    if (!window.confirm('¿Aprobar el pago de este pedido?')) return;
+    setActionLoading(true);
+    try {
+      await api.put(`${URL_API}/${pedidoId}/aprobar-pago`);
+      listar();
+      alert('Pago aprobado. Pedido disponible para repartidor.');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al aprobar pago');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const enviarComentarioAdmin = async () => {
+    if (!adminComment.trim() || !pedidoDetalle) return;
+    setCommentSending(true);
+    try {
+      await api.put(`${URL_API}/${pedidoDetalle.id_pedido}/enviar-comentario`, { comentario: adminComment.trim() });
+      setAdminComment('');
+      alert('Comentario enviado correctamente.');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al enviar comentario');
+    } finally {
+      setCommentSending(false);
+    }
+  };
+
+  const rechazarPago = async (pedidoId) => {
+    const motivo = window.prompt('Motivo del rechazo:');
+    if (!motivo) return;
+    setActionLoading(true);
+    try {
+      await api.put(`${URL_API}/${pedidoId}/rechazar-pago`, { motivo });
+      listar();
+      alert('Pago rechazado.');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al rechazar pago');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    listar();
+    listarUsuarios();
+  }, [isAdminView]);
 
   const descargarTicket = async (pedidoId) => {
     try {
@@ -385,7 +492,7 @@ const Pedidos = ({ variant }) => {
                   <div className="order-header">
                     <span className="order-id">#{p.id_pedido}</span>
                     <span className={`order-status status-${p.estado?.toLowerCase() || 'pendiente'}`}>
-                      {p.estado}
+                      {p.estado === 'PENDIENTE' ? 'PENDIENTE DE PAGO' : p.estado === 'EN_REVISION' ? 'EN REVISIÓN' : p.estado}
                     </span>
                   </div>
                   
@@ -417,11 +524,34 @@ const Pedidos = ({ variant }) => {
                     </button>
 
                     {p.estado === 'PENDIENTE' && (
+                      <>
+                        <button
+                          className="btn-order-action"
+                          onClick={() => abrirUpload(p.id_pedido)}
+                          style={{ background: '#fefce8', color: '#92400e', border: '1px solid #fde68a' }}
+                        >
+                          <Upload size={16} /> Subir Comprobante
+                        </button>
+                        <button
+                          className="btn-order-action btn-cancel-order"
+                          onClick={() => cancelarMiPedido(p.id_pedido)}
+                        >
+                          <Trash2 size={16} /> Cancelar
+                        </button>
+                      </>
+                    )}
+                    {p.estado === 'EN_REVISION' && (
+                      <span style={{ padding: '6px 12px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 600, background: '#fefce8', color: '#92400e', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <AlertCircle size={14} /> En revisión
+                      </span>
+                    )}
+                    {p.estado === 'RECHAZADO' && (
                       <button
-                        className="btn-order-action btn-cancel-order"
-                        onClick={() => cancelarMiPedido(p.id_pedido)}
+                        className="btn-order-action"
+                        onClick={() => abrirUpload(p.id_pedido)}
+                        style={{ background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}
                       >
-                        <Trash2 size={16} /> Cancelar
+                        <Upload size={16} /> Reintentar
                       </button>
                     )}
                   </div>
@@ -528,6 +658,65 @@ const Pedidos = ({ variant }) => {
           </div>
         </div>
       )}
+      {/* ── MODAL SUBIR COMPROBANTE ───────────────────────────── */}
+      {showUploadModal && (
+        <div className="modal-backdrop" onClick={() => setShowUploadModal(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Upload size={20} /> Subir comprobante
+              </h2>
+              <button onClick={() => setShowUploadModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+                <X size={22} />
+              </button>
+            </div>
+
+            {!uploadPreview ? (
+              <div
+                style={{ border: '2px dashed var(--border)', borderRadius: 12, padding: 32, textAlign: 'center', cursor: 'pointer', background: '#fafbfc' }}
+                onClick={() => document.getElementById('upload-comprobante-input').click()}
+              >
+                <FileImage size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
+                <p style={{ color: '#64748b', marginBottom: 8 }}>Selecciona la imagen del comprobante</p>
+                <p style={{ color: '#94a3b8', fontSize: '0.8rem' }}>JPG o PNG · Máximo 3MB</p>
+                <input
+                  id="upload-comprobante-input"
+                  type="file"
+                  accept=".jpg,.jpeg,.png"
+                  onChange={handleUploadFileChange}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
+                  <img src={uploadPreview} alt="Vista previa" style={{ maxWidth: '100%', maxHeight: 250, borderRadius: 8, border: '1px solid var(--border)' }} />
+                  <button
+                    onClick={() => { setUploadFile(null); setUploadPreview(null); setUploadError(''); }}
+                    style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  >
+                    <X size={16} color="white" />
+                  </button>
+                </div>
+                <button
+                  className="btn-checkout-red"
+                  onClick={handleUploadSubmit}
+                  disabled={uploading}
+                  style={{ opacity: uploading ? 0.7 : 1, width: '100%' }}
+                >
+                  {uploading ? 'Subiendo...' : 'Enviar Comprobante'}
+                </button>
+              </div>
+            )}
+
+            {uploadError && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#dc2626', marginTop: 12, fontSize: '0.9rem' }}>
+                <AlertCircle size={16} /> {uploadError}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       </>
     );
   }
@@ -609,7 +798,7 @@ const Pedidos = ({ variant }) => {
                         ${p.fsm_estado === 'ENTREGADO' ? 'dot-blue' : ''}
                         ${p.fsm_estado === 'CANCELADO' ? 'dot-red' : ''}
                       `} />
-                      {p.fsm_estado || p.estado}
+                      {p.estado === 'PENDIENTE' ? 'PENDIENTE DE PAGO' : p.fsm_estado || p.estado}
                     </span>
                   </td>
                   <td>{new Date(p.fecha).toLocaleDateString()}</td>
@@ -727,7 +916,7 @@ const Pedidos = ({ variant }) => {
         </div>
       )}
 
-      {/* ── MODAL DETALLE DE PEDIDO (ADMIN) ───────────────────────── */}
+        {/* ── MODAL DETALLE DE PEDIDO (ADMIN) ───────────────────────── */}
       {showDetailModal && (
         <div className="modal-backdrop" onClick={() => setShowDetailModal(false)}>
           <div
@@ -741,12 +930,27 @@ const Pedidos = ({ variant }) => {
                 {pedidoDetalle ? `Pedido #${String(pedidoDetalle.id_pedido).padStart(6, '0')}` : 'Cargando...'}
               </h2>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                {pedidoDetalle && (
+                {pedidoDetalle && pedidoDetalle.estado === 'EN_REVISION' && pedidoDetalle.comprobante_pago_url ? (
                   <button
-                    onClick={() => { setShowDetailModal(false); descargarTicket(pedidoDetalle.id_pedido); }}
+                    onClick={() => window.open(pedidoDetalle.comprobante_pago_url, '_blank')}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+                  >
+                    <Eye size={15} /> Revisar Pago
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => { setShowDetailModal(false); descargarTicket(pedidoDetalle?.id_pedido); }}
                     style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
                   >
                     <Download size={15} /> Descargar Ticket
+                  </button>
+                )}
+                {pedidoDetalle && pedidoDetalle.estado === 'EN_REVISION' && (
+                  <button
+                    onClick={() => { setChatPedidoId(pedidoDetalle.id_pedido); setShowChat(true); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+                  >
+                    <MessageSquare size={15} /> Chat
                   </button>
                 )}
                 <button onClick={() => setShowDetailModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8', lineHeight: 1 }}>
@@ -768,9 +972,9 @@ const Pedidos = ({ variant }) => {
                   <div>
                     <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>Estado</div>
                     <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700,
-                      background: pedidoDetalle.estado === 'PENDIENTE' ? '#fffbeb' : pedidoDetalle.estado === 'CANCELADO' ? '#fef2f2' : '#f0fdf4',
-                      color: pedidoDetalle.estado === 'PENDIENTE' ? '#b45309' : pedidoDetalle.estado === 'CANCELADO' ? '#b91c1c' : '#15803d'
-                    }}>{pedidoDetalle.estado}</span>
+                      background: pedidoDetalle.estado === 'PENDIENTE' ? '#fffbeb' : pedidoDetalle.estado === 'CANCELADO' ? '#fef2f2' : pedidoDetalle.estado === 'EN_REVISION' ? '#fefce8' : pedidoDetalle.estado === 'RECHAZADO' ? '#fef2f2' : '#f0fdf4',
+                      color: pedidoDetalle.estado === 'PENDIENTE' ? '#b45309' : pedidoDetalle.estado === 'CANCELADO' ? '#b91c1c' : pedidoDetalle.estado === 'EN_REVISION' ? '#92400e' : pedidoDetalle.estado === 'RECHAZADO' ? '#991b1b' : '#15803d'
+                    }}>{pedidoDetalle.estado === 'PENDIENTE' ? 'PENDIENTE DE PAGO' : pedidoDetalle.estado === 'EN_REVISION' ? 'EN REVISIÓN' : pedidoDetalle.estado}</span>
                   </div>
                   <div>
                     <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>Fecha</div>
@@ -782,25 +986,42 @@ const Pedidos = ({ variant }) => {
                   </div>
                 </div>
 
-                {/* Productos del pedido con imágenes */}
+                {/* Comprobante de pago */}
+                {pedidoDetalle.comprobante_pago_url && (
+                  <div style={{ marginBottom: 20 }}>
+                    <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '8px' }}>Comprobante de Pago</h3>
+                    <img
+                      src={pedidoDetalle.comprobante_pago_url}
+                      alt="Comprobante de pago"
+                      style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid var(--border)', cursor: 'pointer' }}
+                      onClick={() => window.open(pedidoDetalle.comprobante_pago_url, '_blank')}
+                    />
+                  </div>
+                )}
+
+                {pedidoDetalle.motivo_rechazo && (
+                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 12, marginBottom: 20 }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#991b1b', marginBottom: 4 }}>Motivo de rechazo:</div>
+                    <div style={{ color: '#991b1b', fontSize: '0.9rem' }}>{pedidoDetalle.motivo_rechazo}</div>
+                  </div>
+                )}
+
+                {/* Productos */}
                 <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '12px' }}>Productos</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: 24 }}>
                   {(pedidoDetalle.detalles || []).length === 0 ? (
                     <p style={{ color: '#94a3b8', textAlign: 'center', padding: '2rem' }}>Sin productos detallados.</p>
                   ) : (
                     (pedidoDetalle.detalles || []).map(d => (
                       <div key={d.id_detalle_pedido} style={{ display: 'flex', gap: '16px', alignItems: 'center', padding: '12px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
-                        {/* Imagen del producto */}
                         <div style={{ width: '72px', height: '72px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <OrderProductImg src={d.imagen_url} alt={d.producto_nombre} />
                         </div>
-                        {/* Info */}
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>{d.producto_nombre}</div>
                           <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Cantidad: <strong>{d.cantidad}</strong></div>
                           <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Precio unitario: <strong>${Number(d.precio_unitario).toLocaleString()}</strong></div>
                         </div>
-                        {/* Subtotal */}
                         <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#0f172a', textAlign: 'right', flexShrink: 0 }}>
                           ${Number(d.subtotal).toLocaleString()}
                         </div>
@@ -808,6 +1029,67 @@ const Pedidos = ({ variant }) => {
                     ))
                   )}
                 </div>
+
+                {/* ── Auditoría de Pago ─────────────────────────── */}
+                {pedidoDetalle.estado === 'EN_REVISION' && (
+                  <div style={{ borderTop: '2px solid var(--border)', paddingTop: 20 }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>
+                      Auditoría de Pago
+                    </h3>
+
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                        Observaciones / Retroalimentación
+                      </label>
+                      <textarea
+                        value={adminComment}
+                        onChange={e => setAdminComment(e.target.value)}
+                        placeholder="Ingrese observaciones, retroalimentación o motivo de rechazo..."
+                        rows={3}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.9rem', resize: 'vertical', fontFamily: 'inherit' }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      <button
+                        onClick={async () => {
+                          await aprobarPago(pedidoDetalle.id_pedido);
+                          setShowDetailModal(false);
+                        }}
+                        disabled={actionLoading}
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#15803d', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: actionLoading ? 0.7 : 1, minWidth: 120 }}
+                      >
+                        <CheckCircle size={16} /> Aceptar Pedido
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const motivo = adminComment.trim() || 'Pago rechazado';
+                          setActionLoading(true);
+                          try {
+                            await api.put(`${URL_API}/${pedidoDetalle.id_pedido}/rechazar-pago`, { motivo });
+                            setShowDetailModal(false);
+                            listar();
+                            alert('Pago rechazado.');
+                          } catch (err) {
+                            alert(err.response?.data?.message || 'Error al rechazar pago');
+                          } finally {
+                            setActionLoading(false);
+                          }
+                        }}
+                        disabled={actionLoading}
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: actionLoading ? 0.7 : 1, minWidth: 120 }}
+                      >
+                        <XCircle size={16} /> Cancelar Pedido
+                      </button>
+                      <button
+                        onClick={() => { setChatPedidoId(pedidoDetalle.id_pedido); setShowChat(true); }}
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', minWidth: 120 }}
+                      >
+                        <MessageSquare size={16} /> Chat con Cliente
+                      </button>
+                    </div>
+                  </div>
+                )}
               </>
             ) : null}
           </div>
@@ -832,6 +1114,13 @@ const Pedidos = ({ variant }) => {
             </p>
           </div>
         </div>
+      )}
+
+      {showChat && chatPedidoId && (
+        <ChatModal
+          pedidoId={chatPedidoId}
+          onClose={() => { setShowChat(false); setChatPedidoId(null); }}
+        />
       )}
     </>
   );

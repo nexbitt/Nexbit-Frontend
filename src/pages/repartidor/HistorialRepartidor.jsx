@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
-import { connectSocket, disconnectSocket } from '../../socket';
+import { connectRepartidorSocket, disconnectSocket } from '../../socket';
 import { CheckCircle, XCircle, Clock, ChevronRight, Loader } from 'lucide-react';
 
 const FILTROS = [
@@ -29,7 +29,7 @@ const HistorialRepartidor = () => {
 
   useEffect(() => {
     cargar();
-    const socket = connectSocket(null);
+    const socket = connectRepartidorSocket(null);
     socket.on('pedido:estado', (data) => {
       if (data.estado === 'ENTREGADO' || data.estado === 'CANCELADO') {
         cargar();

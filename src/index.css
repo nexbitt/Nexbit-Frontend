@@ -1911,6 +1911,9 @@ input:focus, select:focus, .search-input:focus, .search-select:focus {
 
 .status-pendiente { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
 .status-pagado { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.status-en_revision { background: #fefce8; color: #92400e; border: 1px solid #fde68a; }
+.status-aprobado { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.status-rechazado { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 .status-entregado { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
 .status-cancelado { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 
@@ -3618,6 +3621,21 @@ input:focus, select:focus, .search-input:focus, .search-select:focus {
 .badge-fsm.en_reparto {
   background: #fef3c7;
   color: #92400e;
+}
+
+.badge-fsm.en_revision {
+  background: #fefce8;
+  color: #92400e;
+}
+
+.badge-fsm.aprobado {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.badge-fsm.rechazado {
+  background: #fef2f2;
+  color: #991b1b;
 }
 
 .badge-fsm.entregado {
