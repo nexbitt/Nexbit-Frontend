@@ -5,7 +5,7 @@
  */
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { Pencil, Trash2, ShoppingCart, Download, Eye, X, Package } from 'lucide-react';
+import { Pencil, Trash2, ShoppingCart, Download, Eye, X, Package, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useModalScroll } from '../hooks/useModalScroll';
 
@@ -33,6 +33,7 @@ const Pedidos = ({ variant }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchField, setSearchField] = useState("usuario_nombre");
   const [currentPage, setCurrentPage] = useState(1);
+  const [alertaModal, setAlertaModal] = useState(null);
   const itemsPerPage = 5;
 
   // Campos del formulario
@@ -585,16 +586,43 @@ const Pedidos = ({ variant }) => {
             <tbody>
               {currentItems.map((p) => (
                 <tr key={p.id_pedido}>
-                  <td>{p.id_pedido}</td>
+                  <td>
+                    {p.id_pedido}
+                    {p.alerta && (
+                      <span className="admin-alerta-icon" title={p.alerta.motivo}>
+                        <AlertTriangle size={14} />
+                      </span>
+                    )}
+                  </td>
                   <td>{p.usuario_nombre || p.usuario_id}</td>
                   <td>${Number(p.total).toLocaleString()}</td>
                   <td>
-                    <span className="badge-rol" style={{ backgroundColor: p.estado === 'PENDIENTE' ? '#f59f00' : p.estado === 'CANCELADO' ? '#e03131' : '#2f9e44' }}>
-                      {p.estado}
+                    <span className={`badge-fsm ${p.fsm_estado?.toLowerCase() || ''}`}>
+                      {p.alerta && (
+                        <span className="badge-alerta-wrapper">
+                          <AlertTriangle size={12} />
+                        </span>
+                      )}
+                      <span className={`status-dot 
+                        ${p.fsm_estado === 'DISPONIBLE' ? 'dot-green' : ''}
+                        ${p.fsm_estado === 'EN_REPARTO' ? 'dot-yellow' : ''}
+                        ${p.fsm_estado === 'ENTREGADO' ? 'dot-blue' : ''}
+                        ${p.fsm_estado === 'CANCELADO' ? 'dot-red' : ''}
+                      `} />
+                      {p.fsm_estado || p.estado}
                     </span>
                   </td>
                   <td>{new Date(p.fecha).toLocaleDateString()}</td>
                   <td className="actions-cell">
+                    {p.alerta && (
+                      <button
+                        className="btn-icon btn-alerta"
+                        onClick={() => setAlertaModal(p.alerta)}
+                        title="Ver problema"
+                      >
+                        <AlertTriangle size={18} color="#dc2626" />
+                      </button>
+                    )}
                     <button className="btn-icon" onClick={() => seleccionarPedido(p)} title="Editar">
                       <Pencil size={18} color="var(--primary)" />
                     </button>
@@ -782,6 +810,26 @@ const Pedidos = ({ variant }) => {
                 </div>
               </>
             ) : null}
+          </div>
+        </div>
+      )}
+
+      {alertaModal && (
+        <div className="modal-backdrop" onClick={() => setAlertaModal(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 460 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+                <AlertTriangle size={20} color="#dc2626" />
+                Motivo de alerta
+              </h2>
+              <button onClick={() => setAlertaModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <p style={{ color: '#334155', lineHeight: 1.6, margin: 0 }}>{alertaModal.motivo}</p>
+            <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: 12 }}>
+              {new Date(alertaModal.fecha).toLocaleString()}
+            </p>
           </div>
         </div>
       )}

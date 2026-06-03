@@ -1,29 +1,42 @@
-/**
- * @file InicioRepartidor.jsx
- * @description Dashboard de inicio para el rol Repartidor.
- * Muestra los pedidos asignados al repartidor logueado y sus estados.
- */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
-import { Package, CheckCircle, Clock, Bike } from 'lucide-react';
+import { Package, CheckCircle, Clock, Bike, MapPin, TrendingUp } from 'lucide-react';
 
 const InicioRepartidor = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [datos, setDatos] = useState(null);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user?.id_usuario) {
-      api.get(`/api/repartidores/${user.id_usuario}`)
-        .then(res => setDatos(res.data))
-        .catch(err => console.error('Error al cargar datos del repartidor:', err))
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    const cargar = async () => {
+      try {
+        const [repartidorRes, disponiblesRes, historialRes] = await Promise.all([
+          api.get(`/api/repartidores/${user?.id_usuario}`).catch(() => ({ data: null })),
+          api.get('/api/reparto/disponibles').catch(() => ({ data: [] })),
+          api.get('/api/reparto/historial?filtro=todos').catch(() => ({ data: [] })),
+        ]);
+        setDatos(repartidorRes.data);
+        const historial = historialRes.data || [];
+        setStats({
+          disponibles: (disponiblesRes.data || []).length,
+          activo: (repartidorRes.data?.pedidos_repartidor || []).filter(
+            (p) => p.estado === 'ASIGNADO' || p.estado === 'EN_CAMINO'
+          ).length,
+          entregados: historial.filter((p) => p.estado_fsm === 'ENTREGADO').length,
+          cancelados: historial.filter((p) => p.estado_fsm === 'CANCELADO').length,
+        });
+      } catch (err) {
+        console.error('Error cargando datos:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (user?.id_usuario) cargar();
+    else setLoading(false);
   }, [user]);
 
   if (loading) {
@@ -35,16 +48,35 @@ const InicioRepartidor = () => {
     );
   }
 
-  const pedidos = datos?.pedidos_repartidor || [];
-  const asignados = pedidos.filter(p => p.estado === 'ASIGNADO').length;
-  const enCamino = pedidos.filter(p => p.estado === 'EN_CAMINO').length;
-  const entregados = pedidos.filter(p => p.estado === 'ENTREGADO').length;
-
-  const stats = [
-    { Icon: Package, label: 'Total asignados', value: pedidos.length, color: '#6366f1' },
-    { Icon: Clock, label: 'Asignados', value: asignados, color: '#f59e0b' },
-    { Icon: Bike, label: 'En camino', value: enCamino, color: '#3b82f6' },
-    { Icon: CheckCircle, label: 'Entregados', value: entregados, color: '#10b981' },
+  const quickActions = [
+    {
+      icon: Package,
+      label: 'Pedidos Disponibles',
+      desc: `${stats?.disponibles || 0} pedidos esperando`,
+      color: '#22c55e',
+      route: '/repartidor/disponibles',
+    },
+    {
+      icon: Bike,
+      label: 'En Reparto',
+      desc: stats?.activo > 0 ? 'Tienes un pedido activo' : 'Sin pedido activo',
+      color: '#f59e0b',
+      route: '/repartidor/activo',
+    },
+    {
+      icon: Clock,
+      label: 'Historial',
+      desc: `${(stats?.entregados || 0) + (stats?.cancelados || 0)} pedidos completados`,
+      color: '#6366f1',
+      route: '/repartidor/historial',
+    },
+    {
+      icon: TrendingUp,
+      label: 'Estadísticas',
+      desc: `${stats?.entregados || 0} entregados · ${stats?.cancelados || 0} cancelados`,
+      color: '#3b82f6',
+      route: '/repartidor/historial',
+    },
   ];
 
   return (
@@ -54,9 +86,13 @@ const InicioRepartidor = () => {
       </header>
 
       <div style={{ padding: '1.5rem' }}>
-        {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-          {stats.map(({ Icon, label, value, color }) => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+          {[
+            { Icon: Package, label: 'Disponibles', value: stats?.disponibles || 0, color: '#22c55e' },
+            { Icon: Bike, label: 'En reparto', value: stats?.activo || 0, color: '#f59e0b' },
+            { Icon: CheckCircle, label: 'Entregados', value: stats?.entregados || 0, color: '#10b981' },
+            { Icon: MapPin, label: 'Cancelados', value: stats?.cancelados || 0, color: '#ef4444' },
+          ].map(({ Icon, label, value, color }) => (
             <div key={label} className="modal-box" style={{
               margin: 0, position: 'relative', transform: 'none',
               display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem'
@@ -76,16 +112,24 @@ const InicioRepartidor = () => {
           ))}
         </div>
 
-        {/* Acceso rápido al perfil */}
-        <div className="modal-box" style={{ margin: 0, position: 'relative', transform: 'none' }}>
-          <h2 style={{ marginBottom: '1rem' }}>Accesos rápidos</h2>
-          <button
-            className="btn-save"
-            onClick={() => navigate('/repartidor/perfil')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-          >
-            Ver mi Perfil
-          </button>
+        <div className="quick-actions-grid">
+          {quickActions.map(({ icon: Icon, label, desc, color, route }) => (
+            <div
+              key={label}
+              className="quick-action-card"
+              onClick={() => navigate(route)}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="quick-action-icon" style={{ backgroundColor: color + '20', color }}>
+                <Icon size={24} />
+              </div>
+              <div className="quick-action-info">
+                <strong>{label}</strong>
+                <span>{desc}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </>

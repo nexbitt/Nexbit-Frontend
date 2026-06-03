@@ -19,7 +19,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, NavLink } from 'react-r
 import TopBar from './components/TopBar';
 import AdminSidebar from './components/AdminSidebar';
 import CartToast from './components/CartToast';
-import { Bike, UserCog, LogOut } from 'lucide-react';
+import { Bike, UserCog, LogOut, Package, Clock } from 'lucide-react';
 
 // Páginas
 import Usuarios from './pages/Usuarios';
@@ -41,6 +41,10 @@ import Reportes from './pages/Reportes';
 // Páginas del repartidor
 import InicioRepartidor from './pages/repartidor/InicioRepartidor';
 import PerfilRepartidor from './pages/repartidor/PerfilRepartidor';
+import PedidosDisponibles from './pages/repartidor/PedidosDisponibles';
+import PedidoActivo from './pages/repartidor/PedidoActivo';
+import HistorialRepartidor from './pages/repartidor/HistorialRepartidor';
+import ActiveBanner from './components/ActiveBanner';
 
 import { CartProvider } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -96,6 +100,21 @@ const RepartidorLayout = () => {
               <Bike size={18} className="adm-sb-icon" />
               <span>Inicio</span>
             </NavLink>
+            <NavLink to="/repartidor/disponibles" className={({ isActive }) => `adm-sb-link${isActive ? ' adm-sb-link--active' : ''}`}>
+              <Package size={18} className="adm-sb-icon" />
+              <span>Disponibles</span>
+            </NavLink>
+            <NavLink to="/repartidor/activo" className={({ isActive }) => `adm-sb-link${isActive ? ' adm-sb-link--active' : ''}`}>
+              <Bike size={18} className="adm-sb-icon" />
+              <span>En Reparto</span>
+            </NavLink>
+            <NavLink to="/repartidor/historial" className={({ isActive }) => `adm-sb-link${isActive ? ' adm-sb-link--active' : ''}`}>
+              <Clock size={18} className="adm-sb-icon" />
+              <span>Historial</span>
+            </NavLink>
+          </div>
+          <div className="adm-sb-group">
+            <span className="adm-sb-group-label">Cuenta</span>
             <NavLink to="/repartidor/perfil" className={({ isActive }) => `adm-sb-link${isActive ? ' adm-sb-link--active' : ''}`}>
               <UserCog size={18} className="adm-sb-icon" />
               <span>Mi Perfil</span>
@@ -111,6 +130,7 @@ const RepartidorLayout = () => {
       </aside>
       <main className="adm-content">
         <div className="admin-container">
+          <ActiveBanner repartidorId={user?.id_usuario} />
           <Outlet />
         </div>
       </main>
@@ -213,6 +233,9 @@ function AppRoutes() {
       >
         <Route index element={<Navigate to="inicio" replace />} />
         <Route path="inicio" element={<InicioRepartidor />} />
+        <Route path="disponibles" element={<PedidosDisponibles />} />
+        <Route path="activo" element={<PedidoActivo />} />
+        <Route path="historial" element={<HistorialRepartidor />} />
         <Route path="perfil" element={<PerfilRepartidor />} />
       </Route>
 
