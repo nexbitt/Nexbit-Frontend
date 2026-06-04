@@ -46,9 +46,7 @@ const ConfirmacionPedido = ({ variant }) => {
     try {
       const formData = new FormData();
       formData.append('comprobante', file);
-      await api.post(`${CONFIRMACION_RUTA}/${id}/subir-comprobante`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await api.post(`${CONFIRMACION_RUTA}/${id}/subir-comprobante`, formData);
       setUploaded(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Error al subir comprobante');

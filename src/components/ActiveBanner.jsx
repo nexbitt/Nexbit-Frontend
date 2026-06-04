@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bike, Clock, ChevronRight } from 'lucide-react';
 import api from '../api';
+import { FSM_STATUS } from '../constants/orderStatuses';
 
 const ActiveBanner = ({ repartidorId }) => {
   const [activo, setActivo] = useState(null);
@@ -23,7 +24,7 @@ const ActiveBanner = ({ repartidorId }) => {
 
   if (!activo) return null;
 
-  const tiempoEstimado = activo.estado_fsm === 'EN_CAMINO'
+  const tiempoEstimado = activo.estado_fsm === FSM_STATUS.EN_CAMINO
     ? 'En camino al destino'
     : 'Preparando entrega';
 
@@ -47,7 +48,7 @@ const ActiveBanner = ({ repartidorId }) => {
           </div>
         </div>
         <div className="active-banner-eta">
-          <span className={`status-dot ${activo.estado_fsm === 'EN_CAMINO' ? 'dot-yellow' : 'dot-green'}`} />
+          <span className={`status-dot ${activo.estado_fsm === FSM_STATUS.EN_CAMINO ? 'dot-yellow' : 'dot-green'}`} />
         </div>
         <ChevronRight size={20} className="active-banner-arrow" />
       </div>

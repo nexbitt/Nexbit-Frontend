@@ -6,12 +6,11 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
-import { Package, ShieldCheck, Lock, CreditCard, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Package, ShieldCheck, Lock, CreditCard, ChevronRight } from 'lucide-react';
 
 const Carrito = ({ variant }) => {
-  const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart, checkout, verificarPedidoPendiente } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart, checkout } = useCart();
   const navigate = useNavigate();
-  const [blockingOrder, setBlockingOrder] = useState(null);
 
   // El checkout transaccional del backend requiere estar logueado. A un 'usuario' (invitado) le pedimos logearse.
   const isGuest = variant === 'usuario';
@@ -19,12 +18,6 @@ const Carrito = ({ variant }) => {
   const handleProceed = async () => {
     if (isGuest) {
       navigate('/login');
-      return;
-    }
-
-    const pendiente = await verificarPedidoPendiente();
-    if (pendiente?.tienePedidoActivo) {
-      setBlockingOrder(pendiente.pedido);
       return;
     }
 
@@ -132,24 +125,6 @@ const Carrito = ({ variant }) => {
         </div>
       )}
 
-      {blockingOrder && (
-        <div className="modal-backdrop" onClick={() => setBlockingOrder(null)}>
-          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 460, textAlign: 'center' }}>
-            <AlertTriangle size={48} color="#b45309" style={{ marginBottom: 16 }} />
-            <h2 style={{ marginBottom: 12 }}>Pedido pendiente</h2>
-            <p style={{ color: '#555', marginBottom: 20 }}>
-              Ya tienes un pedido #{blockingOrder.id_pedido} en estado "{blockingOrder.estado === 'EN_REVISION' ? 'En Revisión' : 'Pendiente'}".
-              Debes esperar a que el administrador procese el pago antes de hacer un nuevo pedido.
-            </p>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button className="btn-cancel" onClick={() => setBlockingOrder(null)}>Entendido</button>
-              <button className="btn-save" onClick={() => { setBlockingOrder(null); navigate(`/${variant}/pedidos`); }}>
-                Ir a mis pedidos
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -142,17 +142,6 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const verificarPedidoPendiente = async () => {
-    if (!usuario_id) return null;
-    try {
-      const res = await api.get(`/api/pedidos/usuario/${usuario_id}/verificar-pendiente`);
-      return res.data;
-    } catch (err) {
-      console.error('Error verificando pedido pendiente:', err);
-      return null;
-    }
-  };
-
   const totalItems = cartItems.reduce((t, i) => t + i.cantidad, 0);
   const getCartCount = () => totalItems;
   const getCartTotal = () => cartItems.reduce((t, i) => t + i.precio * i.cantidad, 0);
@@ -165,7 +154,6 @@ export const CartProvider = ({ children }) => {
       updateQuantity,
       clearCart,
       checkout,
-      verificarPedidoPendiente,
       getCartCount,
       getCartTotal,
       totalItems,

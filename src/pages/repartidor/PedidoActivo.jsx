@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { connectRepartidorSocket, disconnectSocket } from '../../socket';
-import { Bike, MapPin, Phone, AlertTriangle, CheckCircle, XCircle, PackageSearch } from 'lucide-react';
+import { Bike, MapPin, Phone, AlertTriangle, CheckCircle, XCircle, PackageSearch, MessageSquare } from 'lucide-react';
+import { ORDER_STATUS, FSM_STATUS } from '../../constants/orderStatuses';
+import ChatModal from '../../components/ChatModal';
 
 const PedidoActivo = () => {
   const [pedido, setPedido] = useState(null);
@@ -11,6 +13,7 @@ const PedidoActivo = () => {
   const [swipeConfirm, setSwipeConfirm] = useState(false);
   const [problemaModal, setProblemaModal] = useState(false);
   const [descripcionProblema, setDescripcionProblema] = useState('');
+  const [showChat, setShowChat] = useState(false);
   const navigate = useNavigate();
 
   const cargar = useCallback(async () => {
@@ -28,7 +31,7 @@ const PedidoActivo = () => {
     cargar();
     const socket = connectRepartidorSocket(null);
     socket.on('pedido:estado', (data) => {
-      if (data.estado === 'ENTREGADO' || data.estado === 'CANCELADO') {
+      if (data.estado === ORDER_STATUS.ENTREGADO || data.estado === ORDER_STATUS.CANCELADO) {
         cargar();
       }
     });
@@ -39,7 +42,7 @@ const PedidoActivo = () => {
     setAccion('camino');
     try {
       await api.put(`/api/reparto/${pedido.id_pedido}/en-camino`);
-      setPedido((prev) => ({ ...prev, estado_fsm: 'EN_CAMINO', estado_db: 'EN_CAMINO' }));
+      setPedido((prev) => ({ ...prev, estado_fsm: FSM_STATUS.EN_CAMINO, estado_db: ORDER_STATUS.EN_CAMINO }));
     } catch (err) {
       alert(err.response?.data?.error || 'Error al actualizar');
     } finally {
@@ -118,7 +121,7 @@ const PedidoActivo = () => {
     );
   }
 
-  const enCamino = pedido.estado_fsm === 'EN_CAMINO' || pedido.estado_db === 'EN_CAMINO';
+  const enCamino = pedido.estado_fsm === FSM_STATUS.EN_CAMINO || pedido.estado_db === ORDER_STATUS.EN_CAMINO;
 
   return (
     <>
@@ -137,7 +140,7 @@ const PedidoActivo = () => {
               <div className="step-dot" />
               <span>Tomado</span>
             </div>
-            <div className={`progress-step ${enCamino ? 'active' : ''} ${pedido.estado_fsm === 'ENTREGADO' ? 'done' : ''}`}>
+            <div className={`progress-step ${enCamino ? 'active' : ''} ${pedido.estado_fsm === FSM_STATUS.ENTREGADO ? 'done' : ''}`}>
               <div className="step-dot" />
               <span>En camino</span>
             </div>
@@ -235,6 +238,14 @@ const PedidoActivo = () => {
                   Reportar problema
                 </button>
                 <button
+                  className="btn-chat-repartidor"
+                  onClick={() => setShowChat(true)}
+                  title="Chatear con el administrador"
+                >
+                  <MessageSquare size={16} />
+                  Chat
+                </button>
+                <button
                   className="btn-cancelar-entrega"
                   onClick={cancelarPedido}
                   disabled={accion === 'cancelar'}
@@ -275,6 +286,13 @@ const PedidoActivo = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showChat && pedido && (
+        <ChatModal
+          pedidoId={pedido.id_pedido}
+          onClose={() => setShowChat(false)}
+        />
       )}
     </>
   );

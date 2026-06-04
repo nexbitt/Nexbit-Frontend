@@ -17,6 +17,7 @@ import {
   UsersRound, Building2, Bike, Shield,
   UserCog, LogOut, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
+import { useSocket } from '../context/SocketContext';
 
 // ── Definición de grupos y rutas del sidebar ─────────────────────────────────
 //
@@ -54,6 +55,7 @@ const NAV_GROUPS = [
 
 // ── Componente ────────────────────────────────────────────────────────────────
 const AdminSidebar = ({ collapsed, onToggle, onLogout }) => {
+  const { pendingReviewCount } = useSocket();
   return (
     <aside className={`adm-sidebar${collapsed ? ' adm-sidebar--collapsed' : ''}`}>
 
@@ -85,6 +87,9 @@ const AdminSidebar = ({ collapsed, onToggle, onLogout }) => {
               >
                 <Icon size={18} className="adm-sb-icon" />
                 {!collapsed && <span>{itemLabel}</span>}
+                {to === '/admin/pedidos' && pendingReviewCount > 0 && (
+                  <span className="adm-sb-badge">{pendingReviewCount}</span>
+                )}
               </NavLink>
             ))}
           </div>

@@ -3,12 +3,14 @@
  * @description Gestión de pedidos para Administradores y Clientes.
  * Incluye visualización de detalles, generación de tickets y gestión de estados.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../api';
 import { Pencil, Trash2, ShoppingCart, Download, Eye, X, Package, AlertTriangle, Upload, CheckCircle, XCircle, AlertCircle, FileImage, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useModalScroll } from '../hooks/useModalScroll';
 import ChatModal from '../components/ChatModal';
+import { ORDER_STATUS, FSM_STATUS, STATUS_LABELS, STATUS_COLORS, TICKET_STATUS_COLORS, ALL_STATUSES } from '../constants/orderStatuses';
+import { useSocket } from '../context/SocketContext';
 
 const URL_API = "/api/pedidos";
 const URL_USUARIOS = "/api/usuarios";
@@ -39,6 +41,8 @@ const Pedidos = ({ variant }) => {
   const [showChat, setShowChat] = useState(false);
   const [chatPedidoId, setChatPedidoId] = useState(null);
 
+  // Admin: revisión de pago en modal detalle
+  const [showPaymentReview, setShowPaymentReview] = useState(false);
   // Admin: comentarios en modal detalle
   const [adminComment, setAdminComment] = useState('');
   const [commentSending, setCommentSending] = useState(false);
@@ -59,7 +63,7 @@ const Pedidos = ({ variant }) => {
   const [idPedido, setIdPedido] = useState(null);
   const [usuarioId, setUsuarioId] = useState("");
   const [total, setTotal] = useState(0);
-  const [estado, setEstado] = useState('PENDIENTE');
+  const [estado, setEstado] = useState(ORDER_STATUS.PENDIENTE);
 
   const listar = () => {
     setLoading(true);
@@ -80,6 +84,7 @@ const Pedidos = ({ variant }) => {
   const verDetalles = async (pedidoId) => {
     setDetailLoading(true);
     setShowDetailModal(true);
+    setShowPaymentReview(false);
     try {
       const res = await api.get(`${URL_API}/${pedidoId}/ticket`);
       setPedidoDetalle(res.data);
@@ -106,7 +111,7 @@ const Pedidos = ({ variant }) => {
   };
 
   const limpiarFormulario = () => {
-    setUsuarioId(""); setTotal(0); setEstado('PENDIENTE');
+    setUsuarioId(""); setTotal(0); setEstado(ORDER_STATUS.PENDIENTE);
     setEnEdicion(false); setIdPedido(null);
     setShowModal(false);
   };
@@ -207,9 +212,7 @@ const Pedidos = ({ variant }) => {
     try {
       const formData = new FormData();
       formData.append('comprobante', uploadFile);
-      await api.post(`${URL_API}/${uploadPedidoId}/subir-comprobante`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      await api.post(`${URL_API}/${uploadPedidoId}/subir-comprobante`, formData);
       setShowUploadModal(false);
       listar();
       alert('Comprobante enviado con éxito. El administrador lo revisará.');
@@ -263,10 +266,24 @@ const Pedidos = ({ variant }) => {
     }
   };
 
+  const { lastEvent, fetchPendingReviewCount } = useSocket();
+  const prevEventRef = useRef(null);
+
   useEffect(() => {
     listar();
     listarUsuarios();
   }, [isAdminView]);
+
+  useEffect(() => {
+    if (!lastEvent?.current) return;
+    const ev = lastEvent.current;
+    if (ev === prevEventRef.current) return;
+    prevEventRef.current = ev;
+    listar();
+    if (ev.type === 'nuevo-comprobante' || ev.type === 'nuevo-pedido') {
+      fetchPendingReviewCount();
+    }
+  }, [lastEvent?.current]);
 
   const descargarTicket = async (pedidoId) => {
     try {
@@ -327,7 +344,12 @@ const Pedidos = ({ variant }) => {
             .ticket-footer .doc-info { font-size: 0.8rem; opacity: 0.6; }
             .status-badge { display: inline-block; padding: 6px 16px; border-radius: 4px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; }
             .status-pendiente { background: #fef3c7; color: #b45309; }
-            .status-pagado { background: #dcfce7; color: #15803d; }
+            .status-confirmado { background: #dcfce7; color: #15803d; }
+            .status-en_revision { background: #fefce8; color: #92400e; }
+            .status-aprobado { background: #dcfce7; color: #15803d; }
+            .status-rechazado { background: #fee2e2; color: #b91c1c; }
+            .status-asignado { background: #eff6ff; color: #1e40af; }
+            .status-en_camino { background: #fff7ed; color: #c2410c; }
             .status-entregado { background: #dbeafe; color: #1e3a8a; }
             .status-cancelado { background: #fee2e2; color: #b91c1c; }
             @media print {
@@ -357,8 +379,8 @@ const Pedidos = ({ variant }) => {
               <div class="invoice-details">
                 <div class="title">Factura</div>
                 <div class="order-id">Nº ${String(pedido.id_pedido).padStart(6, '0')}</div>
-                <div class="status-badge status-${pedido.estado?.toLowerCase() || 'pendiente'}">
-                  ${pedido.estado || 'PENDIENTE'}
+                <div class="status-badge status-${(pedido.estado || ORDER_STATUS.PENDIENTE).toLowerCase()}">
+                  ${STATUS_LABELS[pedido.estado] || pedido.estado || ORDER_STATUS.PENDIENTE}
                 </div>
               </div>
             </div>
@@ -491,8 +513,9 @@ const Pedidos = ({ variant }) => {
                 <div className="order-card" key={p.id_pedido}>
                   <div className="order-header">
                     <span className="order-id">#{p.id_pedido}</span>
-                    <span className={`order-status status-${p.estado?.toLowerCase() || 'pendiente'}`}>
-                      {p.estado === 'PENDIENTE' ? 'PENDIENTE DE PAGO' : p.estado === 'EN_REVISION' ? 'EN REVISIÓN' : p.estado}
+                    <span className={`order-status`}
+                      style={{ background: (STATUS_COLORS[p.estado] || STATUS_COLORS.PENDIENTE).bg, color: (STATUS_COLORS[p.estado] || STATUS_COLORS.PENDIENTE).color, padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700 }}>
+                      {STATUS_LABELS[p.estado] || p.estado}
                     </span>
                   </div>
                   
@@ -523,7 +546,7 @@ const Pedidos = ({ variant }) => {
                       <Download size={16} /> Ticket
                     </button>
 
-                    {p.estado === 'PENDIENTE' && (
+                    {p.estado === ORDER_STATUS.PENDIENTE && (
                       <>
                         <button
                           className="btn-order-action"
@@ -540,12 +563,12 @@ const Pedidos = ({ variant }) => {
                         </button>
                       </>
                     )}
-                    {p.estado === 'EN_REVISION' && (
+                    {p.estado === ORDER_STATUS.EN_REVISION && (
                       <span style={{ padding: '6px 12px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 600, background: '#fefce8', color: '#92400e', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         <AlertCircle size={14} /> En revisión
                       </span>
                     )}
-                    {p.estado === 'RECHAZADO' && (
+                    {p.estado === ORDER_STATUS.RECHAZADO && (
                       <button
                         className="btn-order-action"
                         onClick={() => abrirUpload(p.id_pedido)}
@@ -613,9 +636,9 @@ const Pedidos = ({ variant }) => {
                   <div>
                     <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>Estado</div>
                     <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700,
-                      background: pedidoDetalle.estado === 'PENDIENTE' ? '#fffbeb' : pedidoDetalle.estado === 'CANCELADO' ? '#fef2f2' : '#f0fdf4',
-                      color: pedidoDetalle.estado === 'PENDIENTE' ? '#b45309' : pedidoDetalle.estado === 'CANCELADO' ? '#b91c1c' : '#15803d'
-                    }}>{pedidoDetalle.estado}</span>
+                      background: (STATUS_COLORS[pedidoDetalle.estado] || STATUS_COLORS.PENDIENTE).bg,
+                      color: (STATUS_COLORS[pedidoDetalle.estado] || STATUS_COLORS.PENDIENTE).color
+                    }}>{STATUS_LABELS[pedidoDetalle.estado] || pedidoDetalle.estado}</span>
                   </div>
                   <div>
                     <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>Fecha</div>
@@ -786,19 +809,19 @@ const Pedidos = ({ variant }) => {
                   <td>{p.usuario_nombre || p.usuario_id}</td>
                   <td>${Number(p.total).toLocaleString()}</td>
                   <td>
-                    <span className={`badge-fsm ${p.fsm_estado?.toLowerCase() || ''}`}>
+                    <span className={`badge-fsm ${(p.fsm_estado || p.estado)?.toLowerCase() || ''}`}>
                       {p.alerta && (
                         <span className="badge-alerta-wrapper">
                           <AlertTriangle size={12} />
                         </span>
                       )}
                       <span className={`status-dot 
-                        ${p.fsm_estado === 'DISPONIBLE' ? 'dot-green' : ''}
-                        ${p.fsm_estado === 'EN_REPARTO' ? 'dot-yellow' : ''}
-                        ${p.fsm_estado === 'ENTREGADO' ? 'dot-blue' : ''}
-                        ${p.fsm_estado === 'CANCELADO' ? 'dot-red' : ''}
+                        ${p.fsm_estado === FSM_STATUS.DISPONIBLE || (p.estado === ORDER_STATUS.PENDIENTE && !p.repartidor_id) ? 'dot-green' : ''}
+                        ${p.fsm_estado === FSM_STATUS.EN_REPARTO ? 'dot-yellow' : ''}
+                        ${(p.fsm_estado || p.estado) === ORDER_STATUS.ENTREGADO ? 'dot-blue' : ''}
+                        ${(p.fsm_estado || p.estado) === ORDER_STATUS.CANCELADO ? 'dot-red' : ''}
                       `} />
-                      {p.estado === 'PENDIENTE' ? 'PENDIENTE DE PAGO' : p.fsm_estado || p.estado}
+                      {STATUS_LABELS[p.estado] || STATUS_LABELS[p.fsm_estado] || p.fsm_estado || p.estado}
                     </span>
                   </td>
                   <td>{new Date(p.fecha).toLocaleDateString()}</td>
@@ -900,10 +923,9 @@ const Pedidos = ({ variant }) => {
               <div className="input-field">
                 <label>Estado</label>
                 <select value={estado} onChange={(e) => setEstado(e.target.value)}>
-                  <option value="PENDIENTE">PENDIENTE</option>
-                  <option value="PAGADO">PAGADO</option>
-                  <option value="ENTREGADO">ENTREGADO</option>
-                  <option value="CANCELADO">CANCELADO</option>
+                  {ALL_STATUSES.map(s => (
+                    <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>
+                  ))}
                 </select>
               </div>
 
@@ -918,7 +940,7 @@ const Pedidos = ({ variant }) => {
 
         {/* ── MODAL DETALLE DE PEDIDO (ADMIN) ───────────────────────── */}
       {showDetailModal && (
-        <div className="modal-backdrop" onClick={() => setShowDetailModal(false)}>
+        <div className="modal-backdrop" onClick={() => { setShowDetailModal(false); setShowPaymentReview(false); }}>
           <div
             className="modal-box"
             onClick={e => e.stopPropagation()}
@@ -929,31 +951,49 @@ const Pedidos = ({ variant }) => {
               <h2 style={{ margin: 0 }}>
                 {pedidoDetalle ? `Pedido #${String(pedidoDetalle.id_pedido).padStart(6, '0')}` : 'Cargando...'}
               </h2>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                {pedidoDetalle && pedidoDetalle.estado === 'EN_REVISION' && pedidoDetalle.comprobante_pago_url ? (
-                  <button
-                    onClick={() => window.open(pedidoDetalle.comprobante_pago_url, '_blank')}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#92400e', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
-                  >
-                    <Eye size={15} /> Revisar Pago
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => { setShowDetailModal(false); descargarTicket(pedidoDetalle?.id_pedido); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
-                  >
-                    <Download size={15} /> Descargar Ticket
-                  </button>
-                )}
-                {pedidoDetalle && pedidoDetalle.estado === 'EN_REVISION' && (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                {pedidoDetalle && (
                   <button
                     onClick={() => { setChatPedidoId(pedidoDetalle.id_pedido); setShowChat(true); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
+                    title="Chatear con el cliente"
                   >
                     <MessageSquare size={15} /> Chat
                   </button>
                 )}
-                <button onClick={() => setShowDetailModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8', lineHeight: 1 }}>
+                {pedidoDetalle && (pedidoDetalle.estado === ORDER_STATUS.PENDIENTE || pedidoDetalle.estado === ORDER_STATUS.EN_REVISION) && (
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm('¿Cancelar este pedido?')) return;
+                      try {
+                        await api.put(`${URL_API}/${pedidoDetalle.id_pedido}/cancelar`);
+                        setShowDetailModal(false);
+                        setShowPaymentReview(false);
+                        listar();
+                      } catch (err) {
+                        alert(err.response?.data?.message || 'Error al cancelar');
+                      }
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
+                    title="Cancelar pedido"
+                  >
+                    <X size={15} /> Cancelar
+                  </button>
+                )}
+                {pedidoDetalle && (
+                  <button
+                    onClick={() => setShowPaymentReview(prev => !prev)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+                      background: showPaymentReview ? '#0f172a' : '#92400e',
+                      color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer',
+                      fontSize: '0.82rem', fontWeight: 600
+                    }}
+                  >
+                    <Eye size={15} /> {showPaymentReview ? 'Cerrar Revisión' : 'Ver Comprobante'}
+                  </button>
+                )}
+                <button onClick={() => { setShowDetailModal(false); setShowPaymentReview(false); }} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8', lineHeight: 1 }}>
                   <X size={22} />
                 </button>
               </div>
@@ -972,9 +1012,9 @@ const Pedidos = ({ variant }) => {
                   <div>
                     <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>Estado</div>
                     <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700,
-                      background: pedidoDetalle.estado === 'PENDIENTE' ? '#fffbeb' : pedidoDetalle.estado === 'CANCELADO' ? '#fef2f2' : pedidoDetalle.estado === 'EN_REVISION' ? '#fefce8' : pedidoDetalle.estado === 'RECHAZADO' ? '#fef2f2' : '#f0fdf4',
-                      color: pedidoDetalle.estado === 'PENDIENTE' ? '#b45309' : pedidoDetalle.estado === 'CANCELADO' ? '#b91c1c' : pedidoDetalle.estado === 'EN_REVISION' ? '#92400e' : pedidoDetalle.estado === 'RECHAZADO' ? '#991b1b' : '#15803d'
-                    }}>{pedidoDetalle.estado === 'PENDIENTE' ? 'PENDIENTE DE PAGO' : pedidoDetalle.estado === 'EN_REVISION' ? 'EN REVISIÓN' : pedidoDetalle.estado}</span>
+                      background: (STATUS_COLORS[pedidoDetalle.estado] || STATUS_COLORS.PENDIENTE).bg,
+                      color: (STATUS_COLORS[pedidoDetalle.estado] || STATUS_COLORS.PENDIENTE).color
+                    }}>{STATUS_LABELS[pedidoDetalle.estado] || pedidoDetalle.estado}</span>
                   </div>
                   <div>
                     <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>Fecha</div>
@@ -986,16 +1026,24 @@ const Pedidos = ({ variant }) => {
                   </div>
                 </div>
 
-                {/* Comprobante de pago */}
-                {pedidoDetalle.comprobante_pago_url && (
+                {/* Comprobante de pago (visible al dar clic en Ver Comprobante) */}
+                {showPaymentReview && (
                   <div style={{ marginBottom: 20 }}>
                     <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '8px' }}>Comprobante de Pago</h3>
-                    <img
-                      src={pedidoDetalle.comprobante_pago_url}
-                      alt="Comprobante de pago"
-                      style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid var(--border)', cursor: 'pointer' }}
-                      onClick={() => window.open(pedidoDetalle.comprobante_pago_url, '_blank')}
-                    />
+                    {pedidoDetalle.comprobante_pago_url ? (
+                      <img
+                        src={pedidoDetalle.comprobante_pago_url}
+                        alt="Comprobante de pago"
+                        style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid var(--border)', cursor: 'pointer' }}
+                        onClick={() => window.open(pedidoDetalle.comprobante_pago_url, '_blank')}
+                      />
+                    ) : (
+                      <div style={{ padding: '24px', textAlign: 'center', background: '#f8fafc', borderRadius: 8, border: '1px dashed var(--border)', color: '#94a3b8' }}>
+                        <AlertCircle size={32} style={{ marginBottom: 8 }} />
+                        <p style={{ fontWeight: 600, marginBottom: 4 }}>Sin comprobante de pago</p>
+                        <p style={{ fontSize: '0.85rem' }}>El cliente aún no ha subido un comprobante para este pedido.</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1030,21 +1078,21 @@ const Pedidos = ({ variant }) => {
                   )}
                 </div>
 
-                {/* ── Auditoría de Pago ─────────────────────────── */}
-                {pedidoDetalle.estado === 'EN_REVISION' && (
+                {/* ── Revisión de Pago (visible tras Ver Comprobante) ── */}
+                {showPaymentReview && (pedidoDetalle.estado === ORDER_STATUS.EN_REVISION || pedidoDetalle.comprobante_pago_url) && (
                   <div style={{ borderTop: '2px solid var(--border)', paddingTop: 20 }}>
                     <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>
-                      Auditoría de Pago
+                      Revisión de Pago
                     </h3>
 
                     <div style={{ marginBottom: 16 }}>
                       <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                        Observaciones / Retroalimentación
+                        Enviar comentario al cliente
                       </label>
                       <textarea
                         value={adminComment}
                         onChange={e => setAdminComment(e.target.value)}
-                        placeholder="Ingrese observaciones, retroalimentación o motivo de rechazo..."
+                        placeholder="Escriba un comentario para el cliente sobre su pago..."
                         rows={3}
                         style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.9rem', resize: 'vertical', fontFamily: 'inherit' }}
                       />
@@ -1053,13 +1101,27 @@ const Pedidos = ({ variant }) => {
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                       <button
                         onClick={async () => {
-                          await aprobarPago(pedidoDetalle.id_pedido);
-                          setShowDetailModal(false);
+                          if (!window.confirm('¿Aprobar el pago de este pedido?')) return;
+                          setActionLoading(true);
+                          try {
+                            if (adminComment.trim()) {
+                              await api.put(`${URL_API}/${pedidoDetalle.id_pedido}/enviar-comentario`, { comentario: adminComment.trim() });
+                            }
+                            await api.put(`${URL_API}/${pedidoDetalle.id_pedido}/aprobar-pago`);
+                            setShowDetailModal(false);
+                            setShowPaymentReview(false);
+                            listar();
+                            alert('Pago aprobado. Pedido disponible para repartidor.');
+                          } catch (err) {
+                            alert(err.response?.data?.message || 'Error al aprobar pago');
+                          } finally {
+                            setActionLoading(false);
+                          }
                         }}
                         disabled={actionLoading}
                         style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#15803d', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: actionLoading ? 0.7 : 1, minWidth: 120 }}
                       >
-                        <CheckCircle size={16} /> Aceptar Pedido
+                        <CheckCircle size={16} /> Aceptar
                       </button>
                       <button
                         onClick={async () => {
@@ -1068,6 +1130,7 @@ const Pedidos = ({ variant }) => {
                           try {
                             await api.put(`${URL_API}/${pedidoDetalle.id_pedido}/rechazar-pago`, { motivo });
                             setShowDetailModal(false);
+                            setShowPaymentReview(false);
                             listar();
                             alert('Pago rechazado.');
                           } catch (err) {
@@ -1079,13 +1142,20 @@ const Pedidos = ({ variant }) => {
                         disabled={actionLoading}
                         style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: actionLoading ? 0.7 : 1, minWidth: 120 }}
                       >
-                        <XCircle size={16} /> Cancelar Pedido
+                        <XCircle size={16} /> Rechazar
                       </button>
                       <button
-                        onClick={() => { setChatPedidoId(pedidoDetalle.id_pedido); setShowChat(true); }}
-                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', minWidth: 120 }}
+                        onClick={async () => {
+                          if (!adminComment.trim()) {
+                            alert('Escriba un comentario antes de enviar.');
+                            return;
+                          }
+                          await enviarComentarioAdmin();
+                        }}
+                        disabled={commentSending}
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: commentSending ? 0.7 : 1, minWidth: 120 }}
                       >
-                        <MessageSquare size={16} /> Chat con Cliente
+                        <MessageSquare size={16} /> Enviar Comentario
                       </button>
                     </div>
                   </div>

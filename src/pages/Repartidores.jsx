@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../api';
 import { MapPin, Eye, CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react';
 import { useModalScroll } from '../hooks/useModalScroll';
+import { ORDER_STATUS, STATUS_LABELS } from '../constants/orderStatuses';
 const URL_API = "/api/repartidores";
 
 const Repartidores = () => {
@@ -212,7 +213,7 @@ const Repartidores = () => {
                           <button className="btn-icon" title="Ver Detalle" onClick={() => { setSelectedPedido(p); setShowPedidoModal(true); }}>
                             <Eye size={18} color="var(--primary)" />
                           </button>
-                          {p.estado !== 'ENTREGADO' && p.estado !== 'CANCELADO' && (
+                          {p.estado !== ORDER_STATUS.ENTREGADO && p.estado !== ORDER_STATUS.CANCELADO && (
                             <button className="btn-icon" title="Desasignar" onClick={() => desasignarPedido(p.id_pedido)}>
                               <Trash2 size={18} color="var(--danger)" />
                             </button>
@@ -252,10 +253,10 @@ const Repartidores = () => {
                   <h4 style={{ marginTop: '1.5rem' }}>Cambiar Estado</h4>
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                     <select id="select-estado-pedido" defaultValue={selectedPedido.estado} style={{ flex: 1, padding: '0.5rem', borderRadius: '6px' }}>
-                      <option value="ASIGNADO">ASIGNADO</option>
-                      <option value="EN_CAMINO">EN CAMINO</option>
-                      <option value="ENTREGADO">ENTREGADO</option>
-                      <option value="CANCELADO">CANCELADO</option>
+                      <option value={ORDER_STATUS.ASIGNADO}>{STATUS_LABELS[ORDER_STATUS.ASIGNADO]}</option>
+                      <option value={ORDER_STATUS.EN_CAMINO}>{STATUS_LABELS[ORDER_STATUS.EN_CAMINO]}</option>
+                      <option value={ORDER_STATUS.ENTREGADO}>{STATUS_LABELS[ORDER_STATUS.ENTREGADO]}</option>
+                      <option value={ORDER_STATUS.CANCELADO}>{STATUS_LABELS[ORDER_STATUS.CANCELADO]}</option>
                     </select>
                     <button className="btn-save" onClick={() => cambiarEstadoPedido(selectedPedido.id_pedido, document.getElementById('select-estado-pedido').value)}>
                       Actualizar

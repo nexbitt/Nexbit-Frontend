@@ -56,7 +56,31 @@ const translations = {
     'feature.2.title': 'Logística Inteligente',
     'feature.2.desc': 'Asignación automatizada de repartidores y rastreo de entregas milimétrico.',
     'feature.3.title': 'Motor Ultrarrápido',
-    'feature.3.desc': 'Experimenta tiempos de carga ultrarrápidos impulsados por nuestro nuevo motor.'
+    'feature.3.desc': 'Experimenta tiempos de carga ultrarrápidos impulsados por nuestro nuevo motor.',
+    'status.PENDIENTE': 'Pendiente de pago',
+    'status.CONFIRMADO': 'Confirmado',
+    'status.EN_REVISION': 'En revisión',
+    'status.APROBADO': 'Aprobado',
+    'status.RECHAZADO': 'Rechazado',
+    'status.ASIGNADO': 'Asignado',
+    'status.EN_CAMINO': 'En camino',
+    'status.ENTREGADO': 'Entregado',
+    'status.CANCELADO': 'Cancelado',
+    'status.DISPONIBLE': 'Disponible',
+    'status.EN_REPARTO': 'En reparto'
+  },
+  en: {
+    'status.PENDIENTE': 'Pending payment',
+    'status.CONFIRMADO': 'Confirmed',
+    'status.EN_REVISION': 'Under review',
+    'status.APROBADO': 'Approved',
+    'status.RECHAZADO': 'Rejected',
+    'status.ASIGNADO': 'Assigned',
+    'status.EN_CAMINO': 'On the way',
+    'status.ENTREGADO': 'Delivered',
+    'status.CANCELADO': 'Cancelled',
+    'status.DISPONIBLE': 'Available',
+    'status.EN_REPARTO': 'In delivery'
   }
 };
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { connectRepartidorSocket, disconnectSocket } from '../../socket';
 import { CheckCircle, XCircle, Clock, ChevronRight, Loader } from 'lucide-react';
+import { ORDER_STATUS, FSM_STATUS } from '../../constants/orderStatuses';
 
 const FILTROS = [
   { key: 'todos', label: 'Todos' },
@@ -31,7 +32,7 @@ const HistorialRepartidor = () => {
     cargar();
     const socket = connectRepartidorSocket(null);
     socket.on('pedido:estado', (data) => {
-      if (data.estado === 'ENTREGADO' || data.estado === 'CANCELADO') {
+      if (data.estado === ORDER_STATUS.ENTREGADO || data.estado === ORDER_STATUS.CANCELADO) {
         cargar();
       }
     });
@@ -47,8 +48,8 @@ const HistorialRepartidor = () => {
     );
   }
 
-  const entregados = historial.filter((p) => p.estado_fsm === 'ENTREGADO').length;
-  const cancelados = historial.filter((p) => p.estado_fsm === 'CANCELADO').length;
+  const entregados = historial.filter((p) => p.estado_fsm === FSM_STATUS.ENTREGADO).length;
+  const cancelados = historial.filter((p) => p.estado_fsm === FSM_STATUS.CANCELADO).length;
 
   return (
     <>
@@ -90,10 +91,10 @@ const HistorialRepartidor = () => {
           ) : (
             <div className="historial-list">
               {historial.map((p) => (
-                <div key={p.id_pedido} className={`historial-card ${p.estado_fsm === 'ENTREGADO' ? 'card-entregado' : 'card-cancelado'}`}>
+                <div key={p.id_pedido} className={`historial-card ${p.estado_fsm === FSM_STATUS.ENTREGADO ? 'card-entregado' : 'card-cancelado'}`}>
                   <div className="historial-card-left">
                     <div className="historial-card-icon">
-                      {p.estado_fsm === 'ENTREGADO' ? (
+                      {p.estado_fsm === FSM_STATUS.ENTREGADO ? (
                         <CheckCircle size={24} className="icon-entregado" />
                       ) : (
                         <XCircle size={24} className="icon-cancelado" />

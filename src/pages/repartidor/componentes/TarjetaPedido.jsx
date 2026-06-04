@@ -1,5 +1,6 @@
 import React from 'react';
 import { Eye } from 'lucide-react';
+import { ORDER_STATUS, STATUS_COLORS } from '../../../constants/orderStatuses';
 
 const TarjetaPedido = ({ pedido, alVer }) => {
   return (
@@ -10,11 +11,11 @@ const TarjetaPedido = ({ pedido, alVer }) => {
             <h5 className="card-title fw-bold">Pedido #{pedido.id_pedido}</h5>
             <h6 className="card-subtitle mb-2 text-muted">Cliente: {pedido.usuario?.nombre}</h6>
           </div>
-          <span className={`badge ${
-            pedido.estado === 'PENDIENTE' ? 'bg-warning text-dark' :
-            pedido.estado === 'EN_CAMINO' ? 'bg-primary' :
-            'bg-secondary'
-          }`}>
+          <span className="badge" style={{
+            background: (STATUS_COLORS[pedido.estado] || STATUS_COLORS.PENDIENTE).bg,
+            color: (STATUS_COLORS[pedido.estado] || STATUS_COLORS.PENDIENTE).color,
+            padding: '4px 10px', borderRadius: '9999px', fontWeight: 600, fontSize: '0.8rem'
+          }}>
             {pedido.estado}
           </span>
         </div>

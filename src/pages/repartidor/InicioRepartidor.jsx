@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { Package, CheckCircle, Clock, Bike, MapPin, TrendingUp } from 'lucide-react';
+import { ORDER_STATUS, FSM_STATUS } from '../../constants/orderStatuses';
 
 const InicioRepartidor = () => {
   const { user } = useAuth();
@@ -24,10 +25,10 @@ const InicioRepartidor = () => {
         setStats({
           disponibles: (disponiblesRes.data || []).length,
           activo: (repartidorRes.data?.pedidos_repartidor || []).filter(
-            (p) => p.estado === 'ASIGNADO' || p.estado === 'EN_CAMINO'
+            (p) => p.estado === ORDER_STATUS.ASIGNADO || p.estado === ORDER_STATUS.EN_CAMINO
           ).length,
-          entregados: historial.filter((p) => p.estado_fsm === 'ENTREGADO').length,
-          cancelados: historial.filter((p) => p.estado_fsm === 'CANCELADO').length,
+          entregados: historial.filter((p) => p.estado_fsm === FSM_STATUS.ENTREGADO).length,
+          cancelados: historial.filter((p) => p.estado_fsm === FSM_STATUS.CANCELADO).length,
         });
       } catch (err) {
         console.error('Error cargando datos:', err);

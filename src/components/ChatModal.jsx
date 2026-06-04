@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api';
-import { getSocketInstance } from '../socket';
+import { getSocketInstance, connectRepartidorSocket, connectSocket } from '../socket';
 import { X, Send, MessageSquare, User, Shield } from 'lucide-react';
 
 const ChatModal = ({ pedidoId, onClose }) => {
@@ -33,7 +33,14 @@ const ChatModal = ({ pedidoId, onClose }) => {
   }, [pedidoId]);
 
   useEffect(() => {
-    const socket = getSocketInstance();
+    let socket = getSocketInstance();
+    if (!socket && user) {
+      if (user.rol_id === 4) {
+        socket = connectRepartidorSocket(user.id_usuario);
+      } else {
+        socket = connectSocket(user.id_usuario, user.rol_nombre);
+      }
+    }
     if (!socket || !conversacion) return;
 
     const convId = conversacion.id_conversacion;
@@ -105,7 +112,9 @@ const ChatModal = ({ pedidoId, onClose }) => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <MessageSquare size={20} />
-            <span style={{ fontWeight: 700 }}>Chat con cliente</span>
+            <span style={{ fontWeight: 700 }}>
+              {user?.rol_id === 4 ? 'Chat del pedido' : 'Chat con cliente'}
+            </span>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
             <X size={20} />
@@ -134,8 +143,18 @@ const ChatModal = ({ pedidoId, onClose }) => {
                 </div>
               ) : (
                 mensajes.map((msg, idx) => {
-                  const esAdmin = msg.remitente?.rol_id === 1 || msg.remitente_id === user?.id_usuario && user?.rol_id === 1;
+                  const esAdmin = msg.remitente?.rol_id === 1;
+                  const esRepartidor = msg.remitente?.rol_id === 4;
                   const esMio = msg.remitente_id === user?.id_usuario;
+                  const nombreRemitente = msg.remitente?.nombre
+                    ? msg.remitente.nombre
+                    : esMio
+                      ? 'Tú'
+                      : esAdmin
+                        ? 'Administrador'
+                        : esRepartidor
+                          ? 'Repartidor'
+                          : 'Cliente';
                   return (
                     <div
                       key={msg.id_mensaje || idx}
@@ -159,7 +178,7 @@ const ChatModal = ({ pedidoId, onClose }) => {
                         flexDirection: esMio ? 'row-reverse' : 'row'
                       }}>
                         {esAdmin ? <Shield size={10} /> : <User size={10} />}
-                        {msg.remitente?.nombre || (esMio ? 'Tú' : 'Cliente')}
+                        {nombreRemitente}
                       </div>
                       <div style={{
                         padding: '10px 14px',

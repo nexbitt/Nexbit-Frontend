@@ -49,8 +49,10 @@ import ActiveBanner from './components/ActiveBanner';
 
 import { CartProvider } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import { LanguageProvider } from './context/LanguageContext';
+import AdminToast from './components/AdminToast';
 import './services/authService';
 
 // ─── Layout del Panel Admin ──────────────────────────────────────────────────
@@ -74,6 +76,7 @@ const AdminLayout = () => {
         <div className="admin-container">
           <Outlet />
         </div>
+        <AdminToast />
       </main>
     </div>
   );
@@ -281,11 +284,13 @@ function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <CartProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </CartProvider>
+        <SocketProvider>
+          <CartProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </CartProvider>
+        </SocketProvider>
       </AuthProvider>
     </LanguageProvider>
   );

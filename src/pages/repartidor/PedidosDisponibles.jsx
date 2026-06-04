@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
-import { Package, MapPin, DollarSign, Clock, ChevronDown, ChevronUp, Zap, Loader, AlertTriangle, User, X } from 'lucide-react';
+import { Package, MapPin, DollarSign, Clock, ChevronDown, ChevronUp, Zap, Loader, AlertTriangle, User, X, MessageSquare } from 'lucide-react';
+import ChatModal from '../../components/ChatModal';
 
 const PedidosDisponibles = () => {
   const [disponibles, setDisponibles] = useState([]);
@@ -10,6 +11,8 @@ const PedidosDisponibles = () => {
   const [expandido, setExpandido] = useState(null);
   const [tomando, setTomando] = useState(null);
   const [alertaModal, setAlertaModal] = useState(null);
+  const [showChat, setShowChat] = useState(false);
+  const [chatPedidoId, setChatPedidoId] = useState(null);
   const navigate = useNavigate();
 
   const cargar = useCallback(async () => {
@@ -172,17 +175,27 @@ const PedidosDisponibles = () => {
                     </div>
                   </div>
 
-                  <button
-                    className="btn-tomar"
-                    onClick={() => tomarPedido(p.id_pedido)}
-                    disabled={tomando === p.id_pedido}
-                  >
-                    {tomando === p.id_pedido ? (
-                      <>Tomando pedido...</>
-                    ) : (
-                      <>Tomar Pedido</>
-                    )}
-                  </button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      className="btn-tomar"
+                      onClick={() => tomarPedido(p.id_pedido)}
+                      disabled={tomando === p.id_pedido}
+                      style={{ flex: 1 }}
+                    >
+                      {tomando === p.id_pedido ? (
+                        <>Tomando pedido...</>
+                      ) : (
+                        <>Tomar Pedido</>
+                      )}
+                    </button>
+                    <button
+                      className="btn-chat-repartidor"
+                      onClick={() => { setChatPedidoId(p.id_pedido); setShowChat(true); }}
+                      title="Chatear con el administrador"
+                    >
+                      <MessageSquare size={18} />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -204,6 +217,13 @@ const PedidosDisponibles = () => {
             <p style={{ color: '#334155', lineHeight: 1.6, margin: 0 }}>{alertaModal.motivo}</p>
           </div>
         </div>
+      )}
+
+      {showChat && chatPedidoId && (
+        <ChatModal
+          pedidoId={chatPedidoId}
+          onClose={() => { setShowChat(false); setChatPedidoId(null); }}
+        />
       )}
     </>
   );
