@@ -14,6 +14,7 @@ import { useSocket } from '../context/SocketContext';
 
 const URL_API = "/api/pedidos";
 const URL_USUARIOS = "/api/usuarios";
+const URL_ADMIN = "/api/admin";
 
 const Pedidos = ({ variant }) => {
   const [pedidos, setPedidos] = useState([]);
@@ -55,9 +56,7 @@ const Pedidos = ({ variant }) => {
   // Paginación y búsqueda
   const [searchTerm, setSearchTerm] = useState("");
   const [searchField, setSearchField] = useState("usuario_nombre");
-  const [currentPage, setCurrentPage] = useState(1);
   const [alertaModal, setAlertaModal] = useState(null);
-  const itemsPerPage = 5;
 
   // Campos del formulario
   const [idPedido, setIdPedido] = useState(null);
@@ -67,7 +66,8 @@ const Pedidos = ({ variant }) => {
 
   const listar = () => {
     setLoading(true);
-    api.get(URL_API)
+    const url = isAdminView ? `${URL_ADMIN}/pedidos` : URL_API;
+    api.get(url)
       .then(res => setPedidos(res.data))
       .catch(err => console.error("Error al listar pedidos:", err))
       .finally(() => setLoading(false));
@@ -343,15 +343,16 @@ const Pedidos = ({ variant }) => {
             .ticket-footer p { font-size: 0.9rem; margin-bottom: 8px; opacity: 0.9; }
             .ticket-footer .doc-info { font-size: 0.8rem; opacity: 0.6; }
             .status-badge { display: inline-block; padding: 6px 16px; border-radius: 4px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; }
-            .status-pendiente { background: #fef3c7; color: #b45309; }
-            .status-confirmado { background: #dcfce7; color: #15803d; }
-            .status-en_revision { background: #fefce8; color: #92400e; }
-            .status-aprobado { background: #dcfce7; color: #15803d; }
-            .status-rechazado { background: #fee2e2; color: #b91c1c; }
+            .status-pendiente { background: #fef9c3; color: #854d0e; }
+            .status-confirmado { background: #ecfdf5; color: #065f46; }
+            .status-en_revision { background: #fff7ed; color: #c2410c; }
+            .status-aprobado { background: #f0fdf4; color: #166534; }
+            .status-rechazado { background: #fef2f2; color: #991b1b; }
             .status-asignado { background: #eff6ff; color: #1e40af; }
-            .status-en_camino { background: #fff7ed; color: #c2410c; }
-            .status-entregado { background: #dbeafe; color: #1e3a8a; }
-            .status-cancelado { background: #fee2e2; color: #b91c1c; }
+            .status-en_camino { background: #eef2ff; color: #4338ca; }
+            .status-entregado { background: #ecfdf5; color: #065f46; }
+            .status-cancelado { background: #fef2f2; color: #b91c1c; }
+            .status-disponible { background: #f0fdfa; color: #115e59; }
             @media print {
               body { background: #fff; padding: 0; }
               .ticket { box-shadow: none; border: none; }
@@ -473,8 +474,7 @@ const Pedidos = ({ variant }) => {
     return String(value).toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  const totalPages = Math.ceil(filteredPedidos.length / itemsPerPage);
-  const currentItems = filteredPedidos.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const displayItems = filteredPedidos;
 
   // ── Vista: Invitado ──
   if (isGuestView) {
@@ -499,7 +499,7 @@ const Pedidos = ({ variant }) => {
         </div>
         
         <div className="module-content">
-          {currentItems.length === 0 ? (
+          {displayItems.length === 0 ? (
             <div className="empty-orders">
               <div className="empty-icon-wrap">
                 <ShoppingCart size={32} color="#9ca3af" />
@@ -509,7 +509,7 @@ const Pedidos = ({ variant }) => {
             </div>
           ) : (
             <div className="orders-grid">
-              {currentItems.map((p) => (
+              {displayItems.map((p) => (
                 <div className="order-card" key={p.id_pedido}>
                   <div className="order-header">
                     <span className="order-id">#{p.id_pedido}</span>
@@ -564,7 +564,7 @@ const Pedidos = ({ variant }) => {
                       </>
                     )}
                     {p.estado === ORDER_STATUS.EN_REVISION && (
-                      <span style={{ padding: '6px 12px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 600, background: '#fefce8', color: '#92400e', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ padding: '6px 12px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 600, background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         <AlertCircle size={14} /> En revisión
                       </span>
                     )}
@@ -583,13 +583,9 @@ const Pedidos = ({ variant }) => {
             </div>
           )}
 
-          {totalPages > 1 && (
-            <div className="pagination-bar">
-              <button className="page-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>Anterior</button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
-                <button key={num} className={`page-btn ${currentPage === num ? 'active' : ''}`} onClick={() => setCurrentPage(num)}>{num}</button>
-              ))}
-              <button className="page-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}>Siguiente</button>
+          {displayItems.length > 20 && (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8', fontSize: '0.9rem' }}>
+              {displayItems.length} pedidos en total
             </div>
           )}
         </div>
@@ -712,7 +708,7 @@ const Pedidos = ({ variant }) => {
               </div>
             ) : (
               <div style={{ textAlign: 'center' }}>
-                <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
+                <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16, maxWidth: '100%' }}>
                   <img src={uploadPreview} alt="Vista previa" style={{ maxWidth: '100%', maxHeight: 250, borderRadius: 8, border: '1px solid var(--border)' }} />
                   <button
                     onClick={() => { setUploadFile(null); setUploadPreview(null); setUploadError(''); }}
@@ -725,7 +721,7 @@ const Pedidos = ({ variant }) => {
                   className="btn-checkout-red"
                   onClick={handleUploadSubmit}
                   disabled={uploading}
-                  style={{ opacity: uploading ? 0.7 : 1, width: '100%' }}
+                  style={{ opacity: uploading ? 0.7 : 1, width: '100%', marginTop: 0 }}
                 >
                   {uploading ? 'Subiendo...' : 'Enviar Comprobante'}
                 </button>
@@ -755,18 +751,18 @@ const Pedidos = ({ variant }) => {
             className="search-input"
             placeholder="Buscar..."
             value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
           <select
             className="search-select"
             value={searchField}
-            onChange={(e) => { setSearchField(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => setSearchField(e.target.value)}
           >
             <option value="usuario_nombre">Cliente/Usuario</option>
             <option value="id_pedido">ID Pedido</option>
             <option value="estado">Estado</option>
           </select>
-          <button className="btn-search-ok" onClick={() => setCurrentPage(1)}>OK</button>
+
         </div>
       </div>
 
@@ -796,7 +792,7 @@ const Pedidos = ({ variant }) => {
               </tr>
             </thead>
             <tbody>
-              {currentItems.map((p) => (
+              {displayItems.map((p) => (
                 <tr key={p.id_pedido}>
                   <td>
                     {p.id_pedido}
@@ -806,20 +802,32 @@ const Pedidos = ({ variant }) => {
                       </span>
                     )}
                   </td>
-                  <td>{p.usuario_nombre || p.usuario_id}</td>
+                  <td>{p.usuario_nombre || p.cliente || ('Usuario #' + p.usuario_id)}</td>
                   <td>${Number(p.total).toLocaleString()}</td>
                   <td>
                     <span className={`badge-fsm ${(p.fsm_estado || p.estado)?.toLowerCase() || ''}`}>
+                      {p.estado === ORDER_STATUS.EN_REVISION && (
+                        <span className="badge-revision-wrapper">
+                          <AlertCircle size={12} />
+                        </span>
+                      )}
                       {p.alerta && (
                         <span className="badge-alerta-wrapper">
                           <AlertTriangle size={12} />
                         </span>
                       )}
                       <span className={`status-dot 
-                        ${p.fsm_estado === FSM_STATUS.DISPONIBLE || (p.estado === ORDER_STATUS.PENDIENTE && !p.repartidor_id) ? 'dot-green' : ''}
-                        ${p.fsm_estado === FSM_STATUS.EN_REPARTO ? 'dot-yellow' : ''}
-                        ${(p.fsm_estado || p.estado) === ORDER_STATUS.ENTREGADO ? 'dot-blue' : ''}
-                        ${(p.fsm_estado || p.estado) === ORDER_STATUS.CANCELADO ? 'dot-red' : ''}
+                        ${(p.fsm_estado || p.estado) === ORDER_STATUS.PENDIENTE || (p.fsm_estado || p.estado) === FSM_STATUS.PENDIENTE ? 'dot-yellow' : ''}
+                        ${(p.fsm_estado || p.estado) === ORDER_STATUS.CONFIRMADO || (p.fsm_estado || p.estado) === FSM_STATUS.CONFIRMADO ? 'dot-green' : ''}
+                        ${(p.fsm_estado || p.estado) === ORDER_STATUS.EN_REVISION || (p.fsm_estado || p.estado) === FSM_STATUS.EN_REVISION ? 'dot-orange' : ''}
+                        ${(p.fsm_estado || p.estado) === ORDER_STATUS.APROBADO || (p.fsm_estado || p.estado) === FSM_STATUS.APROBADO ? 'dot-green' : ''}
+                        ${(p.fsm_estado || p.estado) === ORDER_STATUS.RECHAZADO || (p.fsm_estado || p.estado) === FSM_STATUS.RECHAZADO ? 'dot-red' : ''}
+                        ${(p.fsm_estado || p.estado) === ORDER_STATUS.ASIGNADO ? 'dot-blue' : ''}
+                        ${(p.fsm_estado || p.estado) === ORDER_STATUS.EN_CAMINO ? 'dot-blue' : ''}
+                        ${(p.fsm_estado || p.estado) === ORDER_STATUS.ENTREGADO || (p.fsm_estado || p.estado) === FSM_STATUS.ENTREGADO ? 'dot-green' : ''}
+                        ${(p.fsm_estado || p.estado) === ORDER_STATUS.CANCELADO || (p.fsm_estado || p.estado) === FSM_STATUS.CANCELADO ? 'dot-red' : ''}
+                        ${(p.fsm_estado || p.estado) === FSM_STATUS.DISPONIBLE ? 'dot-green' : ''}
+                        ${(p.fsm_estado || p.estado) === FSM_STATUS.EN_REPARTO ? 'dot-blue' : ''}
                       `} />
                       {STATUS_LABELS[p.estado] || STATUS_LABELS[p.fsm_estado] || p.fsm_estado || p.estado}
                     </span>
@@ -865,31 +873,9 @@ const Pedidos = ({ variant }) => {
         )}
       </div>
 
-      {!loading && totalPages > 1 && (
-        <div className="pagination-bar">
-          <button
-            className="page-btn"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(prev => prev - 1)}
-          >
-            Previous
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
-            <button
-              key={num}
-              className={`page-btn ${currentPage === num ? 'active' : ''}`}
-              onClick={() => setCurrentPage(num)}
-            >
-              {num}
-            </button>
-          ))}
-          <button
-            className="page-btn"
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage(prev => prev + 1)}
-          >
-            Next
-          </button>
+      {displayItems.length > 20 && (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8', fontSize: '0.9rem' }}>
+          {displayItems.length} pedidos en total
         </div>
       )}
 
@@ -952,15 +938,6 @@ const Pedidos = ({ variant }) => {
                 {pedidoDetalle ? `Pedido #${String(pedidoDetalle.id_pedido).padStart(6, '0')}` : 'Cargando...'}
               </h2>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                {pedidoDetalle && (
-                  <button
-                    onClick={() => { setChatPedidoId(pedidoDetalle.id_pedido); setShowChat(true); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
-                    title="Chatear con el cliente"
-                  >
-                    <MessageSquare size={15} /> Chat
-                  </button>
-                )}
                 {pedidoDetalle && (pedidoDetalle.estado === ORDER_STATUS.PENDIENTE || pedidoDetalle.estado === ORDER_STATUS.EN_REVISION) && (
                   <button
                     onClick={async () => {
@@ -970,6 +947,7 @@ const Pedidos = ({ variant }) => {
                         setShowDetailModal(false);
                         setShowPaymentReview(false);
                         listar();
+                        fetchPendingReviewCount();
                       } catch (err) {
                         alert(err.response?.data?.message || 'Error al cancelar');
                       }
@@ -1026,31 +1004,117 @@ const Pedidos = ({ variant }) => {
                   </div>
                 </div>
 
-                {/* Comprobante de pago (visible al dar clic en Ver Comprobante) */}
+                {pedidoDetalle.motivo_rechazo && (
+                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 12, marginBottom: 20 }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#991b1b', marginBottom: 4 }}>Motivo de rechazo:</div>
+                    <div style={{ color: '#991b1b', fontSize: '0.9rem' }}>{pedidoDetalle.motivo_rechazo}</div>
+                  </div>
+                )}
+
+                {/* ── Revisión de Pago (visible tras Ver Comprobante) ── */}
                 {showPaymentReview && (
-                  <div style={{ marginBottom: 20 }}>
-                    <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 700, letterSpacing: '0.05em', marginBottom: '8px' }}>Comprobante de Pago</h3>
+                  <div style={{ marginBottom: 24, background: '#f8fafc', borderRadius: 12, padding: 20, border: '2px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                      <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
+                        Revisión de Pago
+                      </h3>
+                      {pedidoDetalle.estado === ORDER_STATUS.EN_REVISION && (
+                        <span style={{ fontSize: '0.75rem', background: '#fff7ed', color: '#c2410c', padding: '2px 8px', borderRadius: 9999, fontWeight: 600 }}>
+                          Pendiente de revisión
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Comprobante */}
                     {pedidoDetalle.comprobante_pago_url ? (
-                      <img
-                        src={pedidoDetalle.comprobante_pago_url}
-                        alt="Comprobante de pago"
-                        style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid var(--border)', cursor: 'pointer' }}
-                        onClick={() => window.open(pedidoDetalle.comprobante_pago_url, '_blank')}
-                      />
+                      <div style={{ marginBottom: 16, textAlign: 'center' }}>
+                        <img
+                          src={pedidoDetalle.comprobante_pago_url}
+                          alt="Comprobante de pago"
+                          style={{ maxWidth: '100%', maxHeight: 280, borderRadius: 8, border: '1px solid var(--border)', cursor: 'pointer' }}
+                          onClick={() => window.open(pedidoDetalle.comprobante_pago_url, '_blank')}
+                        />
+                        <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 6 }}>
+                          Haz clic en la imagen para verla completa
+                        </p>
+                      </div>
                     ) : (
-                      <div style={{ padding: '24px', textAlign: 'center', background: '#f8fafc', borderRadius: 8, border: '1px dashed var(--border)', color: '#94a3b8' }}>
+                      <div style={{ padding: '24px', textAlign: 'center', background: '#fff', borderRadius: 8, border: '1px dashed var(--border)', color: '#94a3b8', marginBottom: 16 }}>
                         <AlertCircle size={32} style={{ marginBottom: 8 }} />
                         <p style={{ fontWeight: 600, marginBottom: 4 }}>Sin comprobante de pago</p>
                         <p style={{ fontSize: '0.85rem' }}>El cliente aún no ha subido un comprobante para este pedido.</p>
                       </div>
                     )}
-                  </div>
-                )}
 
-                {pedidoDetalle.motivo_rechazo && (
-                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 12, marginBottom: 20 }}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#991b1b', marginBottom: 4 }}>Motivo de rechazo:</div>
-                    <div style={{ color: '#991b1b', fontSize: '0.9rem' }}>{pedidoDetalle.motivo_rechazo}</div>
+                    {/* Nota y acciones (solo si está EN_REVISION o APROBADO/RECHAZADO) */}
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                        Nota para el cliente
+                      </label>
+                      <textarea
+                        value={adminComment}
+                        onChange={e => setAdminComment(e.target.value)}
+                        placeholder="Escriba un comentario o motivo..."
+                        rows={2}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.9rem', resize: 'vertical', fontFamily: 'inherit' }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm('¿Aceptar el pago de este pedido?')) return;
+                          setActionLoading(true);
+                          try {
+                            const data = { accion: 'ACEPTAR' };
+                            if (adminComment.trim()) data.nota = adminComment.trim();
+                            await api.patch(`${URL_ADMIN}/pedidos/${pedidoDetalle.id_pedido}/gestion`, data);
+                            setShowDetailModal(false);
+                            setShowPaymentReview(false);
+                            listar();
+                            fetchPendingReviewCount();
+                            alert('Pedido aceptado. Ahora es visible para repartidores.');
+                          } catch (err) {
+                            alert(err.response?.data?.message || 'Error al aceptar pedido');
+                          } finally {
+                            setActionLoading(false);
+                          }
+                        }}
+                        disabled={actionLoading}
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#15803d', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: actionLoading ? 0.7 : 1, minWidth: 120 }}
+                      >
+                        <CheckCircle size={16} /> Aceptar
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const motivo = adminComment.trim() || 'Pago rechazado';
+                          setActionLoading(true);
+                          try {
+                            await api.patch(`${URL_ADMIN}/pedidos/${pedidoDetalle.id_pedido}/gestion`, { accion: 'RECHAZAR', nota: motivo });
+                            setShowDetailModal(false);
+                            setShowPaymentReview(false);
+                            listar();
+                            fetchPendingReviewCount();
+                            alert('Pedido rechazado.');
+                          } catch (err) {
+                            alert(err.response?.data?.message || 'Error al rechazar pedido');
+                          } finally {
+                            setActionLoading(false);
+                          }
+                        }}
+                        disabled={actionLoading}
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: actionLoading ? 0.7 : 1, minWidth: 120 }}
+                      >
+                        <XCircle size={16} /> Rechazar
+                      </button>
+                      <button
+                        onClick={() => { setChatPedidoId(pedidoDetalle.id_pedido); setShowChat(true); }}
+                        disabled={actionLoading}
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#6366f1', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: actionLoading ? 0.7 : 1, minWidth: 120 }}
+                      >
+                        <MessageSquare size={16} /> Chatear
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -1077,89 +1141,6 @@ const Pedidos = ({ variant }) => {
                     ))
                   )}
                 </div>
-
-                {/* ── Revisión de Pago (visible tras Ver Comprobante) ── */}
-                {showPaymentReview && (pedidoDetalle.estado === ORDER_STATUS.EN_REVISION || pedidoDetalle.comprobante_pago_url) && (
-                  <div style={{ borderTop: '2px solid var(--border)', paddingTop: 20 }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>
-                      Revisión de Pago
-                    </h3>
-
-                    <div style={{ marginBottom: 16 }}>
-                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                        Enviar comentario al cliente
-                      </label>
-                      <textarea
-                        value={adminComment}
-                        onChange={e => setAdminComment(e.target.value)}
-                        placeholder="Escriba un comentario para el cliente sobre su pago..."
-                        rows={3}
-                        style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.9rem', resize: 'vertical', fontFamily: 'inherit' }}
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                      <button
-                        onClick={async () => {
-                          if (!window.confirm('¿Aprobar el pago de este pedido?')) return;
-                          setActionLoading(true);
-                          try {
-                            if (adminComment.trim()) {
-                              await api.put(`${URL_API}/${pedidoDetalle.id_pedido}/enviar-comentario`, { comentario: adminComment.trim() });
-                            }
-                            await api.put(`${URL_API}/${pedidoDetalle.id_pedido}/aprobar-pago`);
-                            setShowDetailModal(false);
-                            setShowPaymentReview(false);
-                            listar();
-                            alert('Pago aprobado. Pedido disponible para repartidor.');
-                          } catch (err) {
-                            alert(err.response?.data?.message || 'Error al aprobar pago');
-                          } finally {
-                            setActionLoading(false);
-                          }
-                        }}
-                        disabled={actionLoading}
-                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#15803d', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: actionLoading ? 0.7 : 1, minWidth: 120 }}
-                      >
-                        <CheckCircle size={16} /> Aceptar
-                      </button>
-                      <button
-                        onClick={async () => {
-                          const motivo = adminComment.trim() || 'Pago rechazado';
-                          setActionLoading(true);
-                          try {
-                            await api.put(`${URL_API}/${pedidoDetalle.id_pedido}/rechazar-pago`, { motivo });
-                            setShowDetailModal(false);
-                            setShowPaymentReview(false);
-                            listar();
-                            alert('Pago rechazado.');
-                          } catch (err) {
-                            alert(err.response?.data?.message || 'Error al rechazar pago');
-                          } finally {
-                            setActionLoading(false);
-                          }
-                        }}
-                        disabled={actionLoading}
-                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#dc2626', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: actionLoading ? 0.7 : 1, minWidth: 120 }}
-                      >
-                        <XCircle size={16} /> Rechazar
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (!adminComment.trim()) {
-                            alert('Escriba un comentario antes de enviar.');
-                            return;
-                          }
-                          await enviarComentarioAdmin();
-                        }}
-                        disabled={commentSending}
-                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: commentSending ? 0.7 : 1, minWidth: 120 }}
-                      >
-                        <MessageSquare size={16} /> Enviar Comentario
-                      </button>
-                    </div>
-                  </div>
-                )}
               </>
             ) : null}
           </div>

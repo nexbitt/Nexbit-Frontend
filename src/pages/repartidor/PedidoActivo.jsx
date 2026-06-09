@@ -128,7 +128,7 @@ const PedidoActivo = () => {
       <header className="main-header">
         <h1>Pedido Activo #{pedido.id_pedido}</h1>
         <span className={`badge-${enCamino ? 'camino' : 'reparto'}`}>
-          <span className={`status-dot ${enCamino ? 'dot-yellow' : 'dot-green'}`} />
+          <span className={`status-dot ${enCamino ? 'dot-blue' : 'dot-green'}`} />
           {enCamino ? 'En camino' : 'Preparando'}
         </span>
       </header>

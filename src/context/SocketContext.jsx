@@ -36,31 +36,43 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (!isAuthenticated || !user) return;
     const role = user.rol_nombre || 'Invitado';
-    if (role !== 'Administrador') return;
+
+    const query = {
+      userId: user.id_usuario,
+      userRole: role
+    };
 
     const s = io('http://127.0.0.1:3000', {
-      query: {
-        userId: user.id_usuario,
-        userRole: 'Administrador'
-      },
+      query,
       withCredentials: true,
     });
 
     s.on('connect', () => {
-      fetchPendingReviewCount();
+      if (role === 'Administrador') {
+        fetchPendingReviewCount();
+      }
     });
 
-    s.on('notificacion:nuevo-pedido', (data) => {
-      showToast(data.titulo, data.mensaje, 'new-order');
-      lastEventRef.current = { type: 'nuevo-pedido', ...data };
-      setPendingReviewCount(prev => prev + 1);
-    });
+    if (role === 'Administrador') {
+      s.on('notificacion:nuevo-pedido', (data) => {
+        showToast(data.titulo, data.mensaje, 'new-order');
+        lastEventRef.current = { type: 'nuevo-pedido', ...data };
+        setPendingReviewCount(prev => prev + 1);
+      });
 
-    s.on('notificacion:nuevo-comprobante', (data) => {
-      showToast(data.titulo, data.mensaje, 'review');
-      lastEventRef.current = { type: 'nuevo-comprobante', ...data };
-      fetchPendingReviewCount();
-    });
+      s.on('notificacion:nuevo-comprobante', (data) => {
+        showToast(data.titulo, data.mensaje, 'review');
+        lastEventRef.current = { type: 'nuevo-comprobante', ...data };
+        fetchPendingReviewCount();
+      });
+    }
+
+    if (role === 'Repartidor') {
+      s.on('pedido:disponible-nuevo', (data) => {
+        showToast('Nuevo pedido disponible', 'Hay un nuevo pedido disponible para tomar.', 'new-order');
+        lastEventRef.current = { type: 'nuevo-disponible', ...(data || {}) };
+      });
+    }
 
     setSocket(s);
 

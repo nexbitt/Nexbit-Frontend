@@ -57,7 +57,7 @@ const HistorialRepartidor = () => {
         <h1>Historial</h1>
         {historial.length > 0 && (
           <div className="historial-stats">
-            <span className="stat-entregados"><span className="status-dot dot-blue"></span> {entregados} entregados</span>
+            <span className="stat-entregados"><span className="status-dot dot-green"></span> {entregados} entregados</span>
             <span className="stat-cancelados"><span className="status-dot dot-red"></span> {cancelados} cancelados</span>
           </div>
         )}

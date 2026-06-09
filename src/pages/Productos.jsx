@@ -71,8 +71,7 @@ const Productos = ({ variant }) => {
   // Paginación y búsqueda
   const [searchTerm, setSearchTerm]   = useState("");
   const [searchField, setSearchField] = useState("nombre");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = isAdminView ? 5 : 12;
+  
 
   // Campos del formulario
   const [idProducto, setIdProducto]     = useState(null);
@@ -243,8 +242,7 @@ const Productos = ({ variant }) => {
     return String(value).toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  const totalPages   = Math.ceil(filteredProductos.length / itemsPerPage);
-  const currentItems = filteredProductos.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const displayItems = filteredProductos;
 
   // ── VISTA CLIENTE / INVITADO ─────────────────────────────
   if (!isAdminView) {
@@ -258,13 +256,13 @@ const Productos = ({ variant }) => {
               className="search-input"
               placeholder="Buscar productos..."
               value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              onChange={(e) => { setSearchTerm(e.target.value); }}
             />
           </div>
         </div>
 
         <div className="storefront-list">
-          {currentItems.map(p => (
+          {displayItems.map(p => (
             <div key={p.id_producto} className="product-horizontal-card">
               <div className="product-row-header">
                 <h2 className="product-hc-title" style={{ cursor: 'pointer', color: 'var(--primary)' }} onClick={() => verDetalles(p)}>
@@ -391,14 +389,14 @@ const Productos = ({ variant }) => {
           <select
             className="search-select"
             value={searchField}
-            onChange={(e) => { setSearchField(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => { setSearchField(e.target.value); }}
           >
             <option value="id_producto">ID Producto</option>
             <option value="nombre">Nombre</option>
             <option value="categoria_nombre">Categoría</option>
             <option value="proveedor_nombre">Proveedor</option>
           </select>
-          <button className="btn-search-ok" onClick={() => setCurrentPage(1)}>OK</button>
+          <button className="btn-search-ok">OK</button>
         </div>
       </div>
 
@@ -430,7 +428,7 @@ const Productos = ({ variant }) => {
               </tr>
             </thead>
             <tbody>
-              {currentItems.map((p) => (
+              {displayItems.map((p) => (
                 <tr key={p.id_producto}>
                   <td>{p.id_producto}</td>
                   {/* ── Thumbnail de imagen en la tabla ── */}
@@ -471,13 +469,9 @@ const Productos = ({ variant }) => {
         )}
       </div>
 
-      {!loading && totalPages > 1 && (
-        <div className="pagination-bar">
-          <button className="page-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>Previous</button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
-            <button key={num} className={`page-btn ${currentPage === num ? 'active' : ''}`} onClick={() => setCurrentPage(num)}>{num}</button>
-          ))}
-          <button className="page-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}>Next</button>
+      {displayItems.length > 20 && (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8', fontSize: '0.9rem' }}>
+          {displayItems.length} registros en total
         </div>
       )}
 

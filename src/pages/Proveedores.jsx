@@ -15,9 +15,6 @@ const Proveedores = () => {
   // Paginación y búsqueda
   const [searchTerm, setSearchTerm] = useState("");
   const [searchField, setSearchField] = useState("nombre");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-  
   // Campos de la BD
   const [idProveedor, setIdProveedor] = useState(null);
   const [nit, setNit] = useState("");
@@ -116,8 +113,7 @@ const Proveedores = () => {
     return String(value).toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  const totalPages = Math.ceil(filteredProveedores.length / itemsPerPage);
-  const currentItems = filteredProveedores.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const displayItems = filteredProveedores;
 
   return (
     <>
@@ -129,19 +125,19 @@ const Proveedores = () => {
             className="search-input" 
             placeholder="Search..." 
             value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => { setSearchTerm(e.target.value); }}
           />
           <select 
             className="search-select" 
             value={searchField}
-            onChange={(e) => { setSearchField(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => { setSearchField(e.target.value); }}
           >
             <option value="id_proveedor">ID Proveedor</option>
             <option value="nombre">Nombre</option>
             <option value="nit">NIT</option>
             <option value="correo">Correo</option>
           </select>
-          <button className="btn-search-ok" onClick={() => setCurrentPage(1)}>OK</button>
+          <button className="btn-search-ok">OK</button>
         </div>
       </div>
 
@@ -171,7 +167,7 @@ const Proveedores = () => {
               </tr>
             </thead>
             <tbody>
-              {currentItems.map((p) => (
+              {displayItems.map((p) => (
                 <tr key={p.id_proveedor}>
                   <td>{p.id_proveedor}</td>
                   <td>{p.nit}</td>
@@ -198,31 +194,9 @@ const Proveedores = () => {
         )}
       </div>
 
-      {!loading && totalPages > 1 && (
-        <div className="pagination-bar">
-          <button 
-            className="page-btn" 
-            disabled={currentPage === 1} 
-            onClick={() => setCurrentPage(prev => prev - 1)}
-          >
-            Previous
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
-            <button 
-              key={num}
-              className={`page-btn ${currentPage === num ? 'active' : ''}`}
-              onClick={() => setCurrentPage(num)}
-            >
-              {num}
-            </button>
-          ))}
-          <button 
-            className="page-btn" 
-            disabled={currentPage === totalPages} 
-            onClick={() => setCurrentPage(prev => prev + 1)}
-          >
-            Next
-          </button>
+      {displayItems.length > 20 && (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8', fontSize: '0.9rem' }}>
+          {displayItems.length} registros en total
         </div>
       )}
 

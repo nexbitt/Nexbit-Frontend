@@ -5,10 +5,18 @@ import { CheckCircle, Upload, FileImage, X, ChevronLeft, Building, AlertCircle, 
 
 const CONFIRMACION_RUTA = '/api/pedidos';
 
+const bankIcons = {
+  'Bancolombia': Landmark,
+  'Nequi': Smartphone,
+  'default': Building,
+};
+
 const ConfirmacionPedido = ({ variant }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [pedido, setPedido] = useState(null);
+  const [cuentasBancarias, setCuentasBancarias] = useState([]);
+  const [totalPagar, setTotalPagar] = useState(0);
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -17,8 +25,15 @@ const ConfirmacionPedido = ({ variant }) => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api.get(`${CONFIRMACION_RUTA}/${id}/ticket`)
-      .then(res => setPedido(res.data))
+    Promise.all([
+      api.get(`${CONFIRMACION_RUTA}/${id}/ticket`),
+      api.get('/api/bancos').catch(() => ({ data: [] }))
+    ])
+      .then(([pedidoRes, bancosRes]) => {
+        setPedido(pedidoRes.data);
+        setCuentasBancarias(bancosRes.data);
+        setTotalPagar(Number(pedidoRes.data.total));
+      })
       .catch(() => navigate(`/${variant}/pedidos`))
       .finally(() => setLoading(false));
   }, [id]);
@@ -81,58 +96,50 @@ const ConfirmacionPedido = ({ variant }) => {
 
   return (
     <div className="storefront-container" style={{ paddingTop: 10 }}>
-      <button
-        onClick={() => navigate(`/${variant}/pedidos`)}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', marginBottom: 20, padding: 0, fontSize: '0.9rem' }}
-      >
-        <ChevronLeft size={18} /> Volver a mis pedidos
-      </button>
-
       <div style={{ maxWidth: 700, margin: '0 auto' }}>
+        <button
+          onClick={() => navigate(`/${variant}/pedidos`)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', marginBottom: 20, padding: 0, fontSize: '0.9rem' }}
+        >
+          <ChevronLeft size={18} /> Volver a mis pedidos
+        </button>
+
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <CheckCircle size={48} color="#15803d" style={{ marginBottom: 12 }} />
           <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 8 }}>Pedido #{id} creado</h1>
           <p style={{ color: '#64748b' }}>Tu pedido está pendiente de pago. Realiza la transferencia y sube el comprobante.</p>
         </div>
 
-        <div style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: 12, padding: 24, marginBottom: 24 }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: '#92400e' }}>
-            <Building size={20} /> Datos bancarios para transferencia
-          </h3>
-          <p style={{ fontSize: '0.85rem', color: '#92400e', marginBottom: 16 }}>
-            Realiza la transferencia por el valor total a una de las siguientes cuentas y sube el comprobante.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', background: '#fff', borderRadius: 10, padding: 14, border: '1px solid #fde68a' }}>
-              <Smartphone size={24} color="#92400e" />
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Nequi</div>
-                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>300 123 4567</div>
-                <div style={{ fontSize: '0.8rem', color: '#92400e' }}>Nexbit Comercial S.A.S</div>
-              </div>
+        {cuentasBancarias.length > 0 && (
+          <div style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: 12, padding: 24, marginBottom: 24 }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: '#92400e' }}>
+              <Building size={20} /> Datos bancarios para transferencia
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: '#92400e', marginBottom: 16, lineHeight: 1.5 }}>
+              Realiza la transferencia por el valor total a una de las siguientes cuentas y sube el comprobante.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {cuentasBancarias.map((cuenta, i) => {
+                const Icon = bankIcons[cuenta.banco] || bankIcons.default;
+                return (
+                  <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: '#fff', borderRadius: 10, padding: 14, border: '1px solid #fde68a' }}>
+                    <Icon size={24} color="#92400e" style={{ marginTop: 2, flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{cuenta.banco}</div>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b', wordBreak: 'break-all' }}>{cuenta.tipo_cuenta}: {cuenta.numero_cuenta}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#92400e' }}>{cuenta.titular}{cuenta.documento ? ` · ${cuenta.documento}` : ''}</div>
+                      {cuenta.descripcion && <div style={{ fontSize: '0.75rem', color: '#a16207' }}>{cuenta.descripcion}</div>}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', background: '#fff', borderRadius: 10, padding: 14, border: '1px solid #fde68a' }}>
-              <Landmark size={24} color="#92400e" />
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Bancolombia</div>
-                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Cuenta de Ahorros: 1234-56789-0</div>
-                <div style={{ fontSize: '0.8rem', color: '#92400e' }}>Nexbit Comercial S.A.S · NIT 900.123.456-7</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', background: '#fff', borderRadius: 10, padding: 14, border: '1px solid #fde68a' }}>
-              <CreditCard size={24} color="#92400e" />
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Transfiya / Bre-B</div>
-                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Número: 3001234567</div>
-                <div style={{ fontSize: '0.8rem', color: '#92400e' }}>Titular: Nexbit Comercial S.A.S</div>
-              </div>
+            <div style={{ marginTop: 16, padding: '12px 16px', background: '#fff', borderRadius: 10, border: '1px solid #fde68a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Monto a pagar:</span>
+              <span style={{ fontWeight: 800, fontSize: '1.3rem', color: '#92400e' }}>${totalPagar.toLocaleString()}</span>
             </div>
           </div>
-          <div style={{ marginTop: 16, padding: '12px 16px', background: '#fff', borderRadius: 10, border: '1px solid #fde68a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Monto a pagar:</span>
-            <span style={{ fontWeight: 800, fontSize: '1.3rem', color: '#92400e' }}>${Number(pedido?.total || 0).toLocaleString()}</span>
-          </div>
-        </div>
+        )}
 
         <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 24, marginBottom: 24 }}>
           <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -157,7 +164,7 @@ const ConfirmacionPedido = ({ variant }) => {
             </div>
           ) : (
             <div style={{ textAlign: 'center' }}>
-              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16 }}>
+              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 16, maxWidth: '100%' }}>
                 <img src={preview} alt="Vista previa" style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 8, border: '1px solid var(--border)' }} />
                 <button
                   onClick={() => { setFile(null); setPreview(null); setError(''); }}
@@ -171,7 +178,7 @@ const ConfirmacionPedido = ({ variant }) => {
                 className="btn-checkout-red"
                 onClick={handleUpload}
                 disabled={uploading}
-                style={{ opacity: uploading ? 0.7 : 1, width: '100%', maxWidth: 300 }}
+                style={{ opacity: uploading ? 0.7 : 1, width: '100%' }}
               >
                 {uploading ? 'Subiendo...' : 'Enviar Comprobante'}
               </button>

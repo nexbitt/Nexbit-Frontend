@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import api from '../../api';
 import { Package, MapPin, DollarSign, Clock, ChevronDown, ChevronUp, Zap, Loader, AlertTriangle, User, X, MessageSquare } from 'lucide-react';
 import ChatModal from '../../components/ChatModal';
@@ -31,6 +32,18 @@ const PedidosDisponibles = () => {
   }, []);
 
   useEffect(() => { cargar(); const i = setInterval(cargar, 20000); return () => clearInterval(i); }, [cargar]);
+
+  // Escuchar en tiempo real nuevos pedidos disponibles
+  useEffect(() => {
+    const socket = io('http://127.0.0.1:3000', {
+      query: { userRole: 'Repartidor' },
+      withCredentials: true,
+    });
+    socket.on('pedido:disponible-nuevo', () => {
+      cargar();
+    });
+    return () => { socket.disconnect(); };
+  }, [cargar]);
 
   const tomarPedido = async (id) => {
     setTomando(id);

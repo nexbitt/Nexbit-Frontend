@@ -48,7 +48,7 @@ const ActiveBanner = ({ repartidorId }) => {
           </div>
         </div>
         <div className="active-banner-eta">
-          <span className={`status-dot ${activo.estado_fsm === FSM_STATUS.EN_CAMINO ? 'dot-yellow' : 'dot-green'}`} />
+          <span className={`status-dot ${activo.estado_fsm === FSM_STATUS.EN_CAMINO ? 'dot-blue' : 'dot-green'}`} />
         </div>
         <ChevronRight size={20} className="active-banner-arrow" />
       </div>
