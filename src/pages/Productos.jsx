@@ -14,7 +14,8 @@
  */
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { Pencil, Trash2, Package, ShoppingCart, Info, Upload, X } from 'lucide-react';
+import SearchBar from '../components/SearchBar';
+import { Pencil, Trash2, Package, ShoppingCart, Info, Upload, X, Search } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useModalScroll } from '../hooks/useModalScroll';
 
@@ -68,9 +69,9 @@ const Productos = ({ variant }) => {
   const isAdminView   = variant === 'admin' || !variant;
   useModalScroll(showModal || showDetailModal);
 
-  // Paginación y búsqueda
+  // Búsqueda y filtros
   const [searchTerm, setSearchTerm]   = useState("");
-  const [searchField, setSearchField] = useState("nombre");
+  const [filterEstado, setFilterEstado] = useState("ALL");
   
 
   // Campos del formulario
@@ -232,14 +233,13 @@ const Productos = ({ variant }) => {
   };
 
   const filteredProductos = productos.filter(p => {
-    if (isAdminView && searchField === 'estado' && searchTerm) {
-      const estado = p.activo ? 'activo' : 'inactivo';
-      if (!estado.includes(searchTerm.toLowerCase())) return false;
-    }
+    if (filterEstado === 'ACTIVE' && !p.activo) return false;
+    if (filterEstado === 'INACTIVE' && p.activo) return false;
     if (!searchTerm) return true;
-    const value = p[searchField];
-    if (value === null || value === undefined) return false;
-    return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    return (p.nombre && p.nombre.toLowerCase().includes(term))
+        || (p.categoria_nombre && p.categoria_nombre.toLowerCase().includes(term))
+        || (p.proveedor_nombre && p.proveedor_nombre.toLowerCase().includes(term));
   });
 
   const displayItems = filteredProductos;
@@ -250,14 +250,20 @@ const Productos = ({ variant }) => {
       <div className="storefront-container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h1 className="module-title-table" style={{ margin: 0, fontSize: '1.5rem' }}>Resultados de búsqueda</h1>
-          <div className="search-container" style={{ margin: 0 }}>
+          <div className="search-bar-input-wrap" style={{ maxWidth: 320 }}>
+            <Search size={16} className="search-bar-icon" />
             <input
               type="text"
-              className="search-input"
-              placeholder="Buscar productos..."
+              className="search-bar-input"
+              placeholder="Buscar por nombre, categoría o proveedor..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); }}
             />
+            {searchTerm && (
+              <button className="search-bar-clear" onClick={() => setSearchTerm('')}>
+                <X size={16} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -378,26 +384,20 @@ const Productos = ({ variant }) => {
     <>
       <div className="top-action-bar">
         <button className="btn-add-record" onClick={abrirRegistro}>Añadir Producto</button>
-        <div className="search-container">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-          />
-          <select
-            className="search-select"
-            value={searchField}
-            onChange={(e) => { setSearchField(e.target.value); }}
-          >
-            <option value="id_producto">ID Producto</option>
-            <option value="nombre">Nombre</option>
-            <option value="categoria_nombre">Categoría</option>
-            <option value="proveedor_nombre">Proveedor</option>
-          </select>
-          <button className="btn-search-ok">OK</button>
-        </div>
+        <SearchBar
+          value={searchTerm}
+          onChange={(v) => { setSearchTerm(v); setCurrentPage(1); }}
+          placeholder="Buscar por nombre, categoría o proveedor..."
+          filters={[
+            { key: 'estado', label: 'Todos los estados', options: [
+              { value: 'ACTIVE', label: 'Activos' },
+              { value: 'INACTIVE', label: 'Inactivos' }
+            ]}
+          ]}
+          filterValues={{ estado: filterEstado }}
+          onFilterChange={(key, val) => setFilterEstado(val)}
+          onClear={() => { setSearchTerm(''); setFilterEstado('ALL'); setCurrentPage(1); }}
+        />
       </div>
 
       <div className="table-wrapper">

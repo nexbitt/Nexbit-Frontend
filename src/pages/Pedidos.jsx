@@ -9,6 +9,7 @@ import { Pencil, Trash2, ShoppingCart, Download, Eye, X, Package, AlertTriangle,
 import { useNavigate } from 'react-router-dom';
 import { useModalScroll } from '../hooks/useModalScroll';
 import ChatModal from '../components/ChatModal';
+import SearchBar from '../components/SearchBar';
 import { ORDER_STATUS, FSM_STATUS, STATUS_LABELS, STATUS_COLORS, TICKET_STATUS_COLORS, ALL_STATUSES } from '../constants/orderStatuses';
 import { useSocket } from '../context/SocketContext';
 
@@ -27,6 +28,10 @@ const Pedidos = ({ variant }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [pedidoDetalle, setPedidoDetalle] = useState(null);
+
+  // Modal de confirmación de borrado
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePedidoId, setDeletePedidoId] = useState(null);
 
   // Upload comprobante
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -51,11 +56,12 @@ const Pedidos = ({ variant }) => {
   const navigate = useNavigate();
   const isAdminView = variant === 'admin' || !variant;
   const isGuestView = variant === 'guest';
-  useModalScroll(showModal || showDetailModal || showUploadModal);
+  useModalScroll(showModal || showDetailModal || showUploadModal || showDeleteModal);
 
-  // Paginación y búsqueda
+  // Búsqueda y filtros (admin)
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchField, setSearchField] = useState("usuario_nombre");
+  const [filterEstado, setFilterEstado] = useState("ALL");
+  const [filterStatus, setFilterStatus] = useState("ALL");
   const [alertaModal, setAlertaModal] = useState(null);
 
   // Campos del formulario
@@ -178,6 +184,20 @@ const Pedidos = ({ variant }) => {
           alert("No se puede eliminar el pedido. Es posible que tenga facturas relacionadas.\nDetalle: " + (err.response?.data?.error || err.message));
         });
     }
+  };
+
+  const eliminarMiPedido = async (id) => {
+    try {
+      await api.put(`${URL_API}/${id}/eliminar`);
+      listar();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al eliminar el pedido');
+    }
+  };
+
+  const abrirDeleteModal = (pedidoId) => {
+    setDeletePedidoId(pedidoId);
+    setShowDeleteModal(true);
   };
 
   // --- Subir comprobante ---
@@ -468,10 +488,16 @@ const Pedidos = ({ variant }) => {
       if (!user || p.usuario_id !== user.id_usuario) return false;
     }
 
+    // Filtros admin
+    if (isAdminView && filterEstado !== 'ALL' && p.estado !== filterEstado) return false;
+    if (isAdminView && filterStatus === 'DELETED' && p.status_pedido !== 'eliminado_usuario') return false;
+    if (isAdminView && filterStatus === 'ACTIVE' && p.status_pedido === 'eliminado_usuario') return false;
+
     if (!searchTerm) return true;
-    const value = p[searchField];
-    if (value === null || value === undefined) return false;
-    return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    const cliente = p.usuario_nombre || p.usuario?.nombre || '';
+    return (String(p.id_pedido).includes(term))
+        || (cliente.toLowerCase().includes(term));
   });
 
   const displayItems = filteredPedidos;
@@ -577,6 +603,13 @@ const Pedidos = ({ variant }) => {
                         <Upload size={16} /> Reintentar
                       </button>
                     )}
+                    <button
+                      className="btn-order-action btn-cancel-order"
+                      onClick={() => abrirDeleteModal(p.id_pedido)}
+                      style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}
+                    >
+                      <Trash2 size={16} /> Borrar
+                    </button>
                   </div>
                 </div>
               ))}
@@ -677,6 +710,41 @@ const Pedidos = ({ variant }) => {
           </div>
         </div>
       )}
+      {/* ── MODAL CONFIRMAR BORRADO ──────────────────────────── */}
+      {showDeleteModal && (
+        <div className="modal-backdrop" onClick={() => setShowDeleteModal(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 460 }}>
+            <div style={{ textAlign: 'center', padding: '1rem' }}>
+              <Trash2 size={48} color="#dc2626" style={{ marginBottom: '1rem' }} />
+              <h2 style={{ margin: '0 0 0.5rem' }}>¿Eliminar pedido?</h2>
+              <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
+                El pedido se moverá a la papelera dentro de tu perfil.
+                Podrás restaurarlo desde "Mi Cuenta" si lo deseas.
+              </p>
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                <button
+                  className="btn-cancel"
+                  onClick={() => { setShowDeleteModal(false); setDeletePedidoId(null); }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="btn-save"
+                  style={{ background: '#dc2626', color: '#fff' }}
+                  onClick={async () => {
+                    if (deletePedidoId) await eliminarMiPedido(deletePedidoId);
+                    setShowDeleteModal(false);
+                    setDeletePedidoId(null);
+                  }}
+                >
+                  <Trash2 size={16} /> Mover a Papelera
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── MODAL SUBIR COMPROBANTE ───────────────────────────── */}
       {showUploadModal && (
         <div className="modal-backdrop" onClick={() => setShowUploadModal(false)}>
@@ -745,25 +813,24 @@ const Pedidos = ({ variant }) => {
     <>
       <div className="top-action-bar">
         <button className="btn-add-record" onClick={abrirRegistro}>Añadir Pedido</button>
-        <div className="search-container">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Buscar..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <select
-            className="search-select"
-            value={searchField}
-            onChange={(e) => setSearchField(e.target.value)}
-          >
-            <option value="usuario_nombre">Cliente/Usuario</option>
-            <option value="id_pedido">ID Pedido</option>
-            <option value="estado">Estado</option>
-          </select>
-
-        </div>
+        <SearchBar
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar por ID o cliente..."
+          filters={[
+            { key: 'estado', label: 'Todos los estados', options: ALL_STATUSES.map(s => ({ value: s, label: STATUS_LABELS[s] || s })) },
+            { key: 'status', label: 'Todos los tipos', options: [
+              { value: 'ACTIVE', label: 'Activos' },
+              { value: 'DELETED', label: 'Eliminados' }
+            ]}
+          ]}
+          filterValues={{ estado: filterEstado, status: filterStatus }}
+          onFilterChange={(key, val) => {
+            if (key === 'estado') setFilterEstado(val);
+            if (key === 'status') setFilterStatus(val);
+          }}
+          onClear={() => { setSearchTerm(''); setFilterEstado('ALL'); setFilterStatus('ALL'); }}
+        />
       </div>
 
       <div className="table-wrapper">

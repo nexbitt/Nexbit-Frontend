@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { MapPin, Eye, CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react';
+import { MapPin, Eye, CheckCircle, XCircle, Clock, Trash2, ArrowLeft } from 'lucide-react';
 import { useModalScroll } from '../hooks/useModalScroll';
 import { ORDER_STATUS, STATUS_LABELS } from '../constants/orderStatuses';
+import SearchBar from '../components/SearchBar';
+
 const URL_API = "/api/repartidores";
 
 const Repartidores = () => {
@@ -10,7 +12,7 @@ const Repartidores = () => {
   const [loading, setLoading] = useState(true);
   const [selectedRepartidor, setSelectedRepartidor] = useState(null);
   const [pedidosSinAsignar, setPedidosSinAsignar] = useState([]);
-  
+
   // Modal de Detalle de Pedido
   const [selectedPedido, setSelectedPedido] = useState(null);
   const [showPedidoModal, setShowPedidoModal] = useState(false);
@@ -18,7 +20,7 @@ const Repartidores = () => {
 
   // Filtros vista principal
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL"); // ALL, ACTIVE, INACTIVE
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   const fetchRepartidores = async () => {
     setLoading(true);
@@ -97,15 +99,14 @@ const Repartidores = () => {
 
   const cambiarEstadoPedido = async (pedidoId, nuevoEstado) => {
     const notas = prompt("Notas adicionales para este cambio de estado (opcional):");
-    if (notas === null) return; // cancelado
+    if (notas === null) return;
     try {
       await api.put(`${URL_API}/pedidos/${pedidoId}/estado`, { estado: nuevoEstado, notas });
       alert("Estado del pedido actualizado");
       verDetalleRepartidor(selectedRepartidor.id_usuario);
       if (showPedidoModal) {
-          // close modal if open
-          setShowPedidoModal(false);
-          setSelectedPedido(null);
+        setShowPedidoModal(false);
+        setSelectedPedido(null);
       }
     } catch (err) {
       console.error("Error al actualizar estado del pedido:", err);
@@ -114,76 +115,93 @@ const Repartidores = () => {
   };
 
   const filteredRepartidores = repartidores.filter(r => {
-    const matchSearch = r.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        r.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchStatus = statusFilter === 'ALL' || 
-                        (statusFilter === 'ACTIVE' && r.activo) || 
-                        (statusFilter === 'INACTIVE' && !r.activo);
+    const matchSearch = r.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+      || r.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchStatus = statusFilter === 'ALL'
+      || (statusFilter === 'ACTIVE' && r.activo)
+      || (statusFilter === 'INACTIVE' && !r.activo);
     return matchSearch && matchStatus;
   });
 
   const getCumplimiento = (est, real) => {
-    if (!real) return <span style={{color: 'orange'}}><Clock size={16}/> Pendiente</span>;
-    if (new Date(real) <= new Date(est)) return <span style={{color: 'green'}}><CheckCircle size={16}/> A tiempo</span>;
-    return <span style={{color: 'red'}}><XCircle size={16}/> Tarde</span>;
+    if (!real) return <span className="repartidor-cumplimiento repartidor-cumplimiento--pending"><Clock size={14} /> Pendiente</span>;
+    if (new Date(real) <= new Date(est)) return <span className="repartidor-cumplimiento repartidor-cumplimiento--on-time"><CheckCircle size={14} /> A tiempo</span>;
+    return <span className="repartidor-cumplimiento repartidor-cumplimiento--late"><XCircle size={14} /> Tarde</span>;
   };
 
+  // ── VISTA DETALLE ──
   if (selectedRepartidor) {
     return (
       <div className="repartidor-detail-view">
-        <button className="btn-cancel" onClick={() => setSelectedRepartidor(null)} style={{ marginBottom: '1rem' }}>
-          &larr; Volver a Repartidores
+        <button className="repartidor-back-btn" onClick={() => setSelectedRepartidor(null)}>
+          <ArrowLeft size={16} /> Volver a Repartidores
         </button>
-        
-        <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-          {/* SECCIÓN 1: Datos Personales */}
-          <div className="data-card" style={{ padding: '1.5rem', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+
+        <div className="repartidor-grid">
+          {/* Tarjeta: Datos del Repartidor */}
+          <div className="repartidor-card">
             <h3>Datos del Repartidor</h3>
-            <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              <p><strong>Nombre:</strong> {selectedRepartidor.nombre}</p>
-              <p><strong>Email:</strong> {selectedRepartidor.email}</p>
-              <p><strong>Teléfono:</strong> {selectedRepartidor.telefono || 'N/A'}</p>
-              <p><strong>Documento:</strong> {selectedRepartidor.numero_documento || 'N/A'}</p>
-              <p><strong>Dirección:</strong> {selectedRepartidor.direccion || 'N/A'}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
-                <strong>Estado de Cuenta:</strong> 
-                <button 
-                  className={`status-toggle ${selectedRepartidor.activo ? 'is-active' : 'is-inactive'}`}
-                  onClick={() => toggleActivo(selectedRepartidor.id_usuario, selectedRepartidor.activo)}
-                >
-                  {selectedRepartidor.activo ? 'Activo' : 'Inactivo'}
-                </button>
+            <div className="repartidor-info">
+              <div className="repartidor-info-row">
+                <span className="repartidor-info-label">Nombre</span>
+                <span className="repartidor-info-value">{selectedRepartidor.nombre}</span>
+              </div>
+              <div className="repartidor-info-row">
+                <span className="repartidor-info-label">Email</span>
+                <span className="repartidor-info-value">{selectedRepartidor.email}</span>
+              </div>
+              <div className="repartidor-info-row">
+                <span className="repartidor-info-label">Teléfono</span>
+                <span className="repartidor-info-value">{selectedRepartidor.telefono || 'N/A'}</span>
+              </div>
+              <div className="repartidor-info-row">
+                <span className="repartidor-info-label">Documento</span>
+                <span className="repartidor-info-value">{selectedRepartidor.numero_documento || 'N/A'}</span>
+              </div>
+              <div className="repartidor-info-row">
+                <span className="repartidor-info-label">Dirección</span>
+                <span className="repartidor-info-value">{selectedRepartidor.direccion || 'N/A'}</span>
               </div>
             </div>
 
-            <hr style={{ margin: '2rem 0', borderColor: 'var(--border)' }} />
-            
-            <h4>Asignar Nuevo Pedido</h4>
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-              <select id="select-pedido-asignar" style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                <option value="">Seleccione un pedido CONFIRMADO...</option>
-                {pedidosSinAsignar.map(p => (
-                  <option key={p.id_pedido} value={p.id_pedido}>
-                    Ped. #{p.id_pedido} - {p.cliente.nombre}
-                  </option>
-                ))}
-              </select>
-              <button className="btn-save" onClick={() => {
-                const select = document.getElementById('select-pedido-asignar');
-                if (select.value) asignarPedido(select.value);
-              }}>
-                Asignar
+            <div className="repartidor-status-row">
+              <strong>Estado de Cuenta</strong>
+              <button
+                className={`status-toggle ${selectedRepartidor.activo ? 'is-active' : 'is-inactive'}`}
+                onClick={() => toggleActivo(selectedRepartidor.id_usuario, selectedRepartidor.activo)}
+              >
+                {selectedRepartidor.activo ? 'Activo' : 'Inactivo'}
               </button>
+            </div>
+
+            <div className="repartidor-assign-section">
+              <h4>Asignar Nuevo Pedido</h4>
+              <div className="repartidor-assign-row">
+                <select id="select-pedido-asignar">
+                  <option value="">Seleccione un pedido CONFIRMADO...</option>
+                  {pedidosSinAsignar.map(p => (
+                    <option key={p.id_pedido} value={p.id_pedido}>
+                      Ped. #{p.id_pedido} - {p.cliente?.nombre}
+                    </option>
+                  ))}
+                </select>
+                <button className="btn-save" onClick={() => {
+                  const sel = document.getElementById('select-pedido-asignar');
+                  if (sel.value) asignarPedido(sel.value);
+                }}>
+                  Asignar
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* SECCIÓN 2: Tabla de Pedidos Asignados */}
-          <div className="data-card" style={{ padding: '1.5rem', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+          {/* Tarjeta: Pedidos Asignados */}
+          <div className="repartidor-card">
             <h3>Pedidos Asignados</h3>
-            <div className="table-wrapper" style={{ marginTop: '1rem' }}>
-              {selectedRepartidor.pedidos_repartidor.length === 0 ? (
-                <p style={{ color: 'var(--text-light)', textAlign: 'center', padding: '2rem' }}>No hay pedidos asignados.</p>
-              ) : (
+            {selectedRepartidor.pedidos_repartidor?.length === 0 ? (
+              <div className="repartidor-empty">No hay pedidos asignados a este repartidor.</div>
+            ) : (
+              <div className="table-wrapper" style={{ marginTop: '1rem' }}>
                 <table className="styled-table">
                   <thead>
                     <tr>
@@ -202,9 +220,7 @@ const Repartidores = () => {
                       <tr key={p.id_pedido}>
                         <td>{p.id_pedido}</td>
                         <td>{p.cliente?.nombre}</td>
-                        <td style={{ maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={p.direccion_entrega}>
-                          {p.direccion_entrega}
-                        </td>
+                        <td><span className="repartidor-truncate" title={p.direccion_entrega}>{p.direccion_entrega}</span></td>
                         <td><span className="badge-rol">{p.estado}</span></td>
                         <td>{p.fecha_asignacion ? new Date(p.fecha_asignacion).toLocaleString() : 'N/A'}</td>
                         <td>{p.fecha_entrega_est ? new Date(p.fecha_entrega_est).toLocaleString() : 'N/A'}</td>
@@ -223,8 +239,8 @@ const Repartidores = () => {
                     ))}
                   </tbody>
                 </table>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -233,26 +249,26 @@ const Repartidores = () => {
           <div className="modal-backdrop">
             <div className="modal-box" style={{ maxWidth: '800px', width: '90%' }}>
               <h2>Detalle Pedido #{selectedPedido.id_pedido}</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '1rem' }}>
-                <div>
+              <div className="repartidor-modal-grid">
+                <div className="repartidor-modal-section">
                   <h4>Información General</h4>
                   <p><strong>Cliente:</strong> {selectedPedido.cliente?.nombre}</p>
                   <p><strong>Dirección:</strong> {selectedPedido.direccion_entrega}</p>
                   <p><strong>Notas:</strong> {selectedPedido.notas_entrega || 'Ninguna'}</p>
                   <p><strong>Total Pedido:</strong> ${Number(selectedPedido.total).toLocaleString()}</p>
-                  
-                  <h4 style={{ marginTop: '1.5rem' }}>Productos</h4>
-                  <ul style={{ listStyle: 'none', padding: 0 }}>
-                    {selectedPedido.detalle_pedido.map(dp => (
-                      <li key={dp.id_detalle_pedido} style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--border)' }}>
-                        {dp.cantidad}x {dp.producto?.nombre} - ${Number(dp.subtotal).toLocaleString()}
+
+                  <h4>Productos</h4>
+                  <ul className="repartidor-product-list">
+                    {selectedPedido.detalle_pedido?.map(dp => (
+                      <li key={dp.id_detalle_pedido} className="repartidor-product-item">
+                        {dp.cantidad}x {dp.producto?.nombre} — ${Number(dp.subtotal).toLocaleString()}
                       </li>
                     ))}
                   </ul>
 
-                  <h4 style={{ marginTop: '1.5rem' }}>Cambiar Estado</h4>
+                  <h4>Cambiar Estado</h4>
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                    <select id="select-estado-pedido" defaultValue={selectedPedido.estado} style={{ flex: 1, padding: '0.5rem', borderRadius: '6px' }}>
+                    <select id="select-estado-pedido" defaultValue={selectedPedido.estado} className="repartidor-estado-select">
                       <option value={ORDER_STATUS.ASIGNADO}>{STATUS_LABELS[ORDER_STATUS.ASIGNADO]}</option>
                       <option value={ORDER_STATUS.EN_CAMINO}>{STATUS_LABELS[ORDER_STATUS.EN_CAMINO]}</option>
                       <option value={ORDER_STATUS.ENTREGADO}>{STATUS_LABELS[ORDER_STATUS.ENTREGADO]}</option>
@@ -263,65 +279,60 @@ const Repartidores = () => {
                     </button>
                   </div>
                 </div>
-                
-                <div>
+
+                <div className="repartidor-modal-section">
                   <h4>Historial de Seguimiento</h4>
                   {selectedPedido.seguimiento && selectedPedido.seguimiento.length > 0 ? (
-                    <div style={{ maxHeight: '300px', overflowY: 'auto', paddingRight: '1rem' }}>
+                    <div className="repartidor-timeline">
                       {selectedPedido.seguimiento.map(seg => (
-                        <div key={seg.id_seguimiento} style={{ marginBottom: '1rem', padding: '1rem', background: 'var(--bg-color)', borderRadius: '8px' }}>
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', marginBottom: '0.5rem' }}>
+                        <div key={seg.id_seguimiento} className="repartidor-timeline-item">
+                          <div className="repartidor-timeline-date">
                             {new Date(seg.fecha).toLocaleString()} por {seg.usuario?.nombre}
                           </div>
-                          <div>
-                            <strong>{seg.estado_anterior || 'CREACIÓN'} &rarr; {seg.estado_nuevo}</strong>
+                          <div className="repartidor-timeline-transition">
+                            {seg.estado_anterior || 'CREACIÓN'} &rarr; {seg.estado_nuevo}
                           </div>
-                          {seg.notas && <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', fontStyle: 'italic' }}>"{seg.notas}"</p>}
+                          {seg.notas && <div className="repartidor-timeline-notes">"{seg.notas}"</div>}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p style={{ color: 'var(--text-light)' }}>No hay historial registrado.</p>
+                    <p style={{ color: '#94a3b8' }}>No hay historial registrado.</p>
                   )}
                 </div>
               </div>
-              
+
               <div className="modal-btns" style={{ marginTop: '2rem' }}>
                 <button className="btn-cancel" onClick={() => { setShowPedidoModal(false); setSelectedPedido(null); }}>Cerrar</button>
               </div>
             </div>
           </div>
         )}
-
       </div>
     );
   }
 
-  // VISTA PRINCIPAL
+  // ── VISTA PRINCIPAL ──
   return (
     <>
       <div className="top-action-bar">
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-          <MapPin size={28} color="var(--primary)"/> Módulo de Repartidores
+        <h2 className="module-title-table" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+          <MapPin size={24} color="var(--primary)" /> Repartidores
         </h2>
-        <div className="search-container">
-          <input 
-            type="text" 
-            className="search-input" 
-            placeholder="Buscar por nombre o email..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <select 
-            className="search-select" 
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="ALL">Todos los estados</option>
-            <option value="ACTIVE">Activos</option>
-            <option value="INACTIVE">Inactivos</option>
-          </select>
-        </div>
+        <SearchBar
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar por nombre o email..."
+          filters={[
+            { key: 'estado', label: 'Todos los estados', options: [
+              { value: 'ACTIVE', label: 'Activos' },
+              { value: 'INACTIVE', label: 'Inactivos' }
+            ]}
+          ]}
+          filterValues={{ estado: statusFilter }}
+          onFilterChange={(key, val) => setStatusFilter(val)}
+          onClear={() => { setSearchTerm(''); setStatusFilter('ALL'); }}
+        />
       </div>
 
       <div className="table-wrapper">
@@ -357,7 +368,7 @@ const Repartidores = () => {
                   <td>{r.telefono || 'N/A'}</td>
                   <td>{r.email}</td>
                   <td>
-                    <button 
+                    <button
                       className={`status-toggle ${r.activo ? 'is-active' : 'is-inactive'}`}
                       onClick={() => toggleActivo(r.id_usuario, r.activo)}
                     >
@@ -366,17 +377,16 @@ const Repartidores = () => {
                   </td>
                   <td>{r.total_pedidos}</td>
                   <td>
-                    <span style={{ 
-                      background: r.pedidos_activos > 0 ? 'var(--warning-light, #fef3c7)' : 'transparent',
-                      color: r.pedidos_activos > 0 ? 'var(--warning-dark, #b45309)' : 'inherit',
-                      padding: '2px 8px', borderRadius: '12px', fontWeight: r.pedidos_activos > 0 ? 'bold' : 'normal'
+                    <span className="badge-count" style={{
+                      background: r.pedidos_activos > 0 ? '#fef3c7' : 'transparent',
+                      color: r.pedidos_activos > 0 ? '#b45309' : 'inherit',
                     }}>
                       {r.pedidos_activos}
                     </span>
                   </td>
                   <td className="actions-cell">
-                    <button className="btn-add-record" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => verDetalleRepartidor(r.id_usuario)}>
-                      Ver Detalle
+                    <button className="btn-primary-sm" onClick={() => verDetalleRepartidor(r.id_usuario)}>
+                      <Eye size={16} /> Ver Detalle
                     </button>
                   </td>
                 </tr>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../api';
 import { Pencil, Trash2, Users } from 'lucide-react';
 import { useModalScroll } from '../hooks/useModalScroll';
+import SearchBar from '../components/SearchBar';
 
 const URL_API = "/api/usuarios";
 
@@ -13,9 +14,10 @@ const Usuarios = () => {
   const [loading, setLoading] = useState(true);
   useModalScroll(showModal);
   
-  // Paginación y búsqueda
+  // Búsqueda y filtros
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchField, setSearchField] = useState("nombre");
+  const [filterRol, setFilterRol] = useState("ALL");
+  const [filterEstado, setFilterEstado] = useState("ALL");
   // Estados vinculados a los campos de la BD
   const [idUsuario, setIdUsuario] = useState(null);
   const [rolId, setRolId] = useState(1);
@@ -113,38 +115,54 @@ const Usuarios = () => {
   };
 
   const filteredUsuarios = usuarios.filter(u => {
+    if (filterRol !== 'ALL' && String(u.rol_id) !== filterRol) return false;
+    if (filterEstado === 'ACTIVE' && !u.activo) return false;
+    if (filterEstado === 'INACTIVE' && u.activo) return false;
     if (!searchTerm) return true;
-    const value = u[searchField];
-    if (value === null || value === undefined) return false;
-    return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    return (u.nombre && u.nombre.toLowerCase().includes(term))
+        || (u.email && u.email.toLowerCase().includes(term))
+        || (u.numero_documento && u.numero_documento.toLowerCase().includes(term));
   });
 
   const displayItems = filteredUsuarios;
+
+  const handleFilterChange = (key, value) => {
+    if (key === 'rol') setFilterRol(value);
+    if (key === 'estado') setFilterEstado(value);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterRol('ALL');
+    setFilterEstado('ALL');
+  };
+
+  const filterValues = { rol: filterRol, estado: filterEstado };
 
   return (
     <>
       <div className="top-action-bar">
         <button className="btn-add-record" onClick={abrirRegistro}>Añadir Usuario</button>
-        <div className="search-container">
-          <input 
-            type="text" 
-            className="search-input" 
-            placeholder="Search..." 
-            value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); }}
-          />
-          <select 
-            className="search-select" 
-            value={searchField}
-            onChange={(e) => { setSearchField(e.target.value); }}
-          >
-            <option value="id_usuario">ID Usuario</option>
-            <option value="nombre">Nombre</option>
-            <option value="email">Email</option>
-            <option value="numero_documento">Num. Doc</option>
-          </select>
-          <button className="btn-search-ok">OK</button>
-        </div>
+        <SearchBar
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar por nombre, email o documento..."
+          filters={[
+            {
+              key: 'rol',
+              label: 'Todos los roles',
+              options: rolesList.map(r => ({ value: String(r.id_rol), label: r.nombre }))
+            },
+            { key: 'estado', label: 'Todos los estados', options: [
+              { value: 'ACTIVE', label: 'Activos' },
+              { value: 'INACTIVE', label: 'Inactivos' }
+            ]}
+          ]}
+          filterValues={filterValues}
+          onFilterChange={handleFilterChange}
+          onClear={clearFilters}
+        />
       </div>
 
       <div className="table-wrapper">

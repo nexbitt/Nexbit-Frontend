@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../api';
 import { Pencil, Trash2, Tags } from 'lucide-react';
 import { useModalScroll } from '../hooks/useModalScroll';
+import SearchBar from '../components/SearchBar';
 
 const URL_API = "/api/categorias";
 
@@ -12,9 +13,8 @@ const Categorias = () => {
   const [loading, setLoading] = useState(true);
   useModalScroll(showModal);
 
-  // Paginación y búsqueda
+  // Búsqueda
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchField, setSearchField] = useState("nombre");
   // Estados vinculados a los campos de la BD
   const [idCategoria, setIdCategoria] = useState(null);
   const [nombre, setNombre] = useState("");
@@ -101,9 +101,9 @@ const Categorias = () => {
 
   const filteredCategorias = categorias.filter(c => {
     if (!searchTerm) return true;
-    const value = c[searchField];
-    if (value === null || value === undefined) return false;
-    return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    return (c.nombre && c.nombre.toLowerCase().includes(term))
+        || (c.descripcion && c.descripcion.toLowerCase().includes(term));
   });
 
   const displayItems = filteredCategorias;
@@ -112,25 +112,11 @@ const Categorias = () => {
     <>
       <div className="top-action-bar">
         <button className="btn-add-record" onClick={abrirRegistro}>Añadir Categoría</button>
-        <div className="search-container">
-          <input 
-            type="text" 
-            className="search-input" 
-            placeholder="Search..." 
-            value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); }}
-          />
-          <select 
-            className="search-select" 
-            value={searchField}
-            onChange={(e) => { setSearchField(e.target.value); }}
-          >
-            <option value="id_categoria">ID Categoría</option>
-            <option value="nombre">Nombre</option>
-            <option value="descripcion">Descripción</option>
-          </select>
-          <button className="btn-search-ok">OK</button>
-        </div>
+        <SearchBar
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar por nombre o descripción..."
+        />
       </div>
 
       <div className="table-wrapper">

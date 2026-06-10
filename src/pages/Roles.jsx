@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../api';
 import { Pencil, Trash2, ShieldCheck } from 'lucide-react';
 import { useModalScroll } from '../hooks/useModalScroll';
+import SearchBar from '../components/SearchBar';
 
 const URL_API = "/api/roles";
 
@@ -14,7 +15,6 @@ const Roles = () => {
   
   // Búsqueda
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchField, setSearchField] = useState("nombre");
   
   // Campos de la BD
   const [idRol, setIdRol] = useState(null);
@@ -100,9 +100,9 @@ const Roles = () => {
 
   const filteredRoles = roles.filter(r => {
     if (!searchTerm) return true;
-    const value = r[searchField];
-    if (value === null || value === undefined) return false;
-    return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    return (r.nombre && r.nombre.toLowerCase().includes(term))
+        || (r.descripcion && r.descripcion.toLowerCase().includes(term));
   });
 
   const displayItems = filteredRoles;
@@ -111,25 +111,11 @@ const Roles = () => {
     <>
       <div className="top-action-bar">
         <button className="btn-add-record" onClick={abrirRegistro}>Añadir Rol</button>
-        <div className="search-container">
-          <input 
-            type="text" 
-            className="search-input" 
-            placeholder="Search..." 
-            value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); }}
-          />
-          <select 
-            className="search-select" 
-            value={searchField}
-            onChange={(e) => { setSearchField(e.target.value); }}
-          >
-            <option value="id_rol">ID Rol</option>
-            <option value="nombre">Nombre</option>
-            <option value="descripcion">Descripción</option>
-          </select>
-          <button className="btn-search-ok">OK</button>
-        </div>
+        <SearchBar
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar por nombre o descripción..."
+        />
       </div>
 
       <div className="table-wrapper">
