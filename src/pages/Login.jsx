@@ -148,7 +148,7 @@ const Login = () => {
             />
           </div>
 
-          <div className="input-field" style={{ marginBottom: '2rem' }}>
+          <div className="input-field" style={{ marginBottom: '0.5rem' }}>
             <label>Contraseña</label>
             <input
               type="password"
@@ -157,6 +157,21 @@ const Login = () => {
               placeholder="***"
               required
             />
+          </div>
+
+          {/* Enlace a recuperación de contraseña */}
+          <div style={{ textAlign: 'right', marginBottom: '1.5rem' }}>
+            <Link
+              to="/forgot-password"
+              style={{
+                fontSize: '0.85rem', color: '#10B981', fontWeight: '600',
+                textDecoration: 'none', transition: 'color 0.15s'
+              }}
+              onMouseEnter={(e) => e.target.style.color = '#059669'}
+              onMouseLeave={(e) => e.target.style.color = '#10B981'}
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
           </div>
 
           {/* Botón Ingresar */}

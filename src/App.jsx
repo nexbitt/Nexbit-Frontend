@@ -33,6 +33,7 @@ import Perfil from './pages/Perfil';
 import Inicio from './pages/Inicio';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 import Carrito from './pages/Carrito';
 import Ayuda from './pages/Ayuda';
 import Contacto from './pages/Contacto';
@@ -189,6 +190,12 @@ function AppRoutes() {
         element={isAuthenticated
           ? <Navigate to={isAdmin ? '/admin/inicio' : isRepartidor ? '/repartidor/inicio' : '/cliente/inicio'} replace />
           : <Register />}
+      />
+      <Route
+        path="/forgot-password"
+        element={isAuthenticated
+          ? <Navigate to={isAdmin ? '/admin/inicio' : isRepartidor ? '/repartidor/inicio' : '/cliente/inicio'} replace />
+          : <ForgotPassword />}
       />
 
       {/* ── Usuario / Invitado ────────────────────────────── */}

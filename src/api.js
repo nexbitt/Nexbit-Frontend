@@ -15,6 +15,7 @@ api.interceptors.response.use(
     const path = window.location.pathname;
     const isPublicRoute = path === '/login'
       || path === '/register'
+      || path === '/forgot-password'
       || path.startsWith('/usuario');
 
     if (error.response?.status === 401 && !isPublicRoute) {
