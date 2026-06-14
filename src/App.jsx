@@ -54,6 +54,10 @@ import { SocketProvider } from './context/SocketContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import { LanguageProvider } from './context/LanguageContext';
 import AdminToast from './components/AdminToast';
+import SimulationToolbar from './components/SimulationToolbar';
+import ClienteSimulationView from './components/ClienteSimulationView';
+import RepartidorSimulationView from './components/RepartidorSimulationView';
+import { SimulationProvider, useSimulation } from './context/SimulationContext';
 import './services/authService';
 
 // ─── Layout del Panel Admin ──────────────────────────────────────────────────
@@ -65,6 +69,7 @@ import './services/authService';
 const AdminLayout = () => {
   const { logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const { activeMode } = useSimulation();
 
   return (
     <div className="adm-layout">
@@ -74,8 +79,15 @@ const AdminLayout = () => {
         onLogout={logout}
       />
       <main className={`adm-content${collapsed ? ' adm-content--expanded' : ''}`}>
+        <SimulationToolbar />
         <div className="admin-container">
-          <Outlet />
+          {activeMode === 'cliente' ? (
+            <ClienteSimulationView />
+          ) : activeMode === 'repartidor' ? (
+            <RepartidorSimulationView />
+          ) : (
+            <Outlet />
+          )}
         </div>
         <AdminToast />
       </main>
@@ -293,9 +305,11 @@ function App() {
       <AuthProvider>
         <SocketProvider>
           <CartProvider>
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
+            <SimulationProvider>
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </SimulationProvider>
           </CartProvider>
         </SocketProvider>
       </AuthProvider>

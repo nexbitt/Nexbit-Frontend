@@ -5822,8 +5822,1039 @@ input:focus, select:focus, .search-input:focus, .search-select:focus {
   color: #64748b;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* ============================================================
+   SIMULATION MODE — Toolbar & Modal Styles
+   ============================================================ */
+
+/* ── Simulation Toolbar ─────────────────────────────────── */
+.sim-toolbar {
+  height: 70px;
+  background: #F8FAFC;
+  border-bottom: 1px solid #E2E8F0;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.sim-toolbar-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sim-toolbar-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748B;
+  background: #E2E8F0;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.sim-toolbar-desc {
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.sim-toolbar-desc strong {
+  color: #1E293B;
+}
+
+.sim-toolbar-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.sim-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  height: 44px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.sim-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.sim-btn-cliente {
+  background: #2563EB;
+}
+
+.sim-btn-cliente:hover {
+  background: #1D4ED8;
+}
+
+.sim-btn-repartidor {
+  background: #F97316;
+}
+
+.sim-btn-repartidor:hover {
+  background: #EA580C;
+}
+
+/* ── Simulation Toolbar (Active State) ─────────────────── */
+.sim-toolbar--active {
+  background: #1E3A8A;
+  border-bottom-color: transparent;
+}
+
+.sim-toolbar--cliente.sim-toolbar--active {
+  background: #1E3A8A;
+}
+
+.sim-toolbar--repartidor.sim-toolbar--active {
+  background: #C2410C;
+}
+
+.sim-toolbar--active .sim-toolbar-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sim-toolbar--active .sim-toolbar-desc {
+  color: rgba(255,255,255,0.85);
+  font-size: 0.85rem;
+}
+
+.sim-toolbar--active .sim-toolbar-desc strong {
+  color: #FFFFFF;
+}
+
+.sim-toolbar-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #FFFFFF;
+  background: rgba(255,255,255,0.2);
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.sim-toolbar-exit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #EF4444;
+  color: #FFFFFF;
+  border: none;
+  padding: 0 16px;
+  height: 36px;
+  min-width: 110px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sim-toolbar-exit:hover {
+  background: #DC2626;
+}
+
+/* ── Client Simulation View ────────────────────────────── */
+.sim-cliente-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.sim-catalog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.sim-catalog-header h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+}
+
+.sim-btn-cart-review {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #111827;
+  color: #FFFFFF;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sim-btn-cart-review:hover {
+  background: #1F2937;
+}
+
+.sim-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.sim-product-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.sim-product-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+
+.sim-product-img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  background: #F9FAFB;
+}
+
+.sim-product-info {
+  padding: 12px 16px;
+}
+
+.sim-product-categoria {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #475569;
+  background: #E2E8F0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sim-product-info h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: #111827;
+}
+
+.sim-product-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2563EB;
+  margin: 0;
+}
+
+.sim-product-stock {
+  font-size: 0.8rem;
+  color: #6B7280;
+  margin: 4px 0 0;
+}
+
+.sim-product-actions {
+  padding: 0 16px 12px;
+}
+
+.sim-btn-add {
+  width: 100%;
+  background: #2563EB;
+  color: #FFFFFF;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sim-btn-add:hover:not(:disabled) {
+  background: #1D4ED8;
+}
+
+.sim-btn-add:disabled {
+  background: #E5E7EB;
+  color: #9CA3AF;
+  cursor: not-allowed;
+}
+
+.sim-qty-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.sim-qty-controls button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sim-qty-controls button:hover {
+  background: #F3F4F6;
+}
+
+.sim-qty-controls span {
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ── Shared Elements ──────────────────────────────────── */
+.sim-btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid #E5E7EB;
+  color: #374151;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: all 0.2s ease;
+}
+
+.sim-btn-back:hover {
+  background: #F9FAFB;
+}
+
+.sim-checkout-form {
+  margin-bottom: 16px;
+}
+
+.sim-checkout-form label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.sim-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #111827;
+  background: #FFFFFF;
+  box-sizing: border-box;
+  font-family: inherit;
+  height: 48px;
+}
+
+.sim-input:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+}
+
+.sim-textarea {
+  resize: vertical;
+  height: auto;
+  min-height: 60px;
+}
+
+.sim-btn-checkout {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #16A34A;
+  color: #FFFFFF;
+  border: none;
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sim-btn-checkout:hover:not(:disabled) {
+  background: #15803D;
+}
+
+.sim-btn-checkout:disabled {
+  background: #D1D5DB;
+  cursor: not-allowed;
+}
+
+/* ── Cart Drawer (Right Side, inline) ─────────────────── */
+.sim-drawer {
+  position: fixed;
+  top: 0;
+  right: -420px;
+  width: 400px;
+  height: 100%;
+  background: #FFFFFF;
+  z-index: 800;
+  display: flex;
+  flex-direction: column;
+  transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -8px 0 30px rgba(0,0,0,0.1);
+}
+
+.sim-drawer--open {
+  right: 0;
+}
+
+.sim-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.sim-drawer-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+}
+
+.sim-drawer-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sim-drawer-close:hover {
+  background: #F3F4F6;
+}
+
+.sim-drawer-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+}
+
+.sim-drawer-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #9CA3AF;
+}
+
+.sim-drawer-empty p {
+  margin-top: 12px;
+}
+
+.sim-drawer-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.sim-drawer-item:last-child {
+  border-bottom: none;
+}
+
+.sim-drawer-item-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #F3F4F6;
+  flex-shrink: 0;
+}
+
+.sim-drawer-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sim-drawer-item-name {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sim-drawer-item-price {
+  font-size: 0.8rem;
+  color: #6B7280;
+}
+
+.sim-drawer-item-qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sim-drawer-item-qty button {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.sim-drawer-item-qty button:hover {
+  background: #F3F4F6;
+}
+
+.sim-drawer-item-qty span {
+  font-weight: 600;
+  min-width: 18px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.sim-drawer-item-subtotal {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #111827;
+  min-width: 70px;
+  text-align: right;
+}
+
+.sim-drawer-item-remove {
+  background: none;
+  border: none;
+  color: #EF4444;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.sim-drawer-item-remove:hover {
+  background: #FEF2F2;
+}
+
+.sim-drawer-footer {
+  padding: 16px 24px 24px;
+  border-top: 1px solid #E5E7EB;
+}
+
+.sim-drawer-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0 16px;
+  font-size: 1rem;
+  border-top: 2px solid #111827;
+  margin-bottom: 0;
+}
+
+.sim-drawer-total strong {
+  font-size: 1.2rem;
+}
+
+/* ── Success Screen ────────────────────────────────────── */
+.sim-success {
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.sim-success h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 16px 0 8px;
+}
+
+.sim-success p {
+  color: #6B7280;
+  margin: 4px 0;
+}
+
+.sim-success-total {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #16A34A !important;
+}
+
+.sim-success-meta {
+  font-size: 0.9rem;
+  color: #6B7280;
+  margin-top: 8px;
+}
+
+.sim-success-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.sim-bank-info {
+  margin: 24px 0;
+  text-align: left;
+}
+
+.sim-bank-info h4 {
+  font-size: 0.9rem;
+  color: #374151;
+  margin-bottom: 12px;
+}
+
+.sim-bank-card {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.sim-bank-card p {
+  font-size: 0.85rem;
+  margin: 2px 0;
+}
+
+/* ── Upload / Dropzone (Comprobante) ──────────────────── */
+.sim-upload-section {
+  margin: 24px 0;
+  text-align: left;
+}
+
+.sim-upload-section h4 {
+  font-size: 0.9rem;
+  color: #374151;
+  margin-bottom: 12px;
+}
+
+.sim-dropzone {
+  height: 120px;
+  background: #FFFFFF;
+  border: 1.5px dashed #CBD5E1;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #94A3B8;
+  font-size: 0.85rem;
+  overflow: hidden;
+}
+
+.sim-dropzone:hover {
+  border-color: #3B82F6;
+  background: #F8FAFC;
+}
+
+.sim-dropzone--active {
+  border-color: #3B82F6;
+  background: #EFF6FF;
+}
+
+.sim-dropzone p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.sim-dropzone-preview {
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.sim-comprobante-preview-container {
+  width: 240px;
+  height: 240px;
+  margin: 16px auto;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.sim-comprobante-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sim-comprobante-name {
+  font-size: 0.85rem;
+  color: #6B7280;
+}
+
+/* ── Repartidor Simulation View ────────────────────────── */
+.sim-repartidor-content {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.sim-repartidor-header {
+  margin-bottom: 20px;
+}
+
+.sim-repartidor-header h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 12px;
+}
+
+.sim-repartidor-filters {
+  display: flex;
+  gap: 8px;
+}
+
+.sim-filter-btn {
+  background: #F3F4F6;
+  border: 1px solid #E5E7EB;
+  color: #4B5563;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sim-filter-btn:hover {
+  background: #E5E7EB;
+}
+
+.sim-filter-btn.active {
+  background: #111827;
+  color: #FFFFFF;
+  border-color: #111827;
+}
+
+/* Estado badges */
+.sim-estado-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sim-estado-aprobado {
+  background: #DCFCE7;
+  color: #16A34A;
+}
+
+.sim-estado-asignado {
+  background: #DBEAFE;
+  color: #2563EB;
+}
+
+.sim-estado-en_camino {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.sim-estado-entregado {
+  background: #F3F4F6;
+  color: #6B7280;
+}
+
+/* ── Repartidor rows (list view) ──────────────────────── */
+.sim-orders-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sim-ruta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 72px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  padding: 0 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sim-ruta-row:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  border-color: #CBD5E1;
+}
+
+.sim-ruta-row-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #E0E7FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sim-ruta-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sim-ruta-row-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.sim-ruta-row-dest {
+  font-size: 0.78rem;
+  color: #6B7280;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sim-ruta-row-cliente {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sim-ruta-row-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.sim-ruta-row-price {
+  font-weight: 700;
+  color: #111827;
+  font-size: 0.9rem;
+}
+
+/* ── Ruta Detail View ──────────────────────────────────── */
+.sim-ruta-view {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.sim-ruta-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.sim-ruta-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.sim-ruta-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #E0E7FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sim-ruta-header h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+}
+
+.sim-ruta-cliente {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: #6B7280;
+  margin-top: 2px;
+}
+
+.sim-ruta-body {
+  padding: 20px;
+}
+
+.sim-ruta-info-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+  color: #4B5563;
+}
+
+.sim-ruta-info-row strong {
+  font-size: 0.75rem;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sim-ruta-info-row p {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+}
+
+.sim-ruta-items {
+  background: #F9FAFB;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 16px;
+}
+
+.sim-ruta-items > strong {
+  display: block;
+  font-size: 0.8rem;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+}
+
+.sim-ruta-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 0.85rem;
+}
+
+.sim-ruta-item-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #E5E7EB;
+}
+
+.sim-ruta-item strong {
+  color: #374151;
+}
+
+.sim-ruta-actions {
+  padding: 0 20px 20px;
+}
+
+.sim-ruta-btn {
+  width: 100%;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #FFFFFF;
+  transition: all 0.2s ease;
+}
+
+.sim-ruta-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.sim-ruta-btn-iniciar {
+  background: #2563EB;
+}
+
+.sim-ruta-btn-iniciar:hover:not(:disabled) {
+  background: #1D4ED8;
+}
+
+.sim-ruta-btn-entregar {
+  background: #10B981;
+}
+
+.sim-ruta-btn-entregar:hover:not(:disabled) {
+  background: #059669;
+}
+
+/* ── Empty & Loading States ────────────────────────────── */
+.sim-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6B7280;
+}
+
+.sim-empty-state h3 {
+  margin: 12px 0 4px;
+  color: #374151;
+}
+
+.sim-view-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: #6B7280;
+}
+
+@keyframes simFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
