@@ -524,7 +524,7 @@ const Reportes = () => {
       case 'ventas': {
         const total = rows.reduce((s, r) => s + Number(r.Total_Factura || 0), 0);
         return [
-          { label: 'Facturas', value: rows.length },
+          { label: 'Tickets', value: rows.length },
           { label: 'Ingresos', value: fmtCOP(total) },
         ];
       }
