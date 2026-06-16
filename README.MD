@@ -1,25 +1,48 @@
-Quick setup — if you’ve done this kind of thing before
-or	
-https://github.com/sebbxs999/PersonalRepository.git
-Get started by creating a new file or uploading an existing file. We recommend every repository include a README, LICENSE, and .gitignore.
+# RematesPaisa — Frontend
 
-…or create a new repository on the command line
-echo "# PersonalRepository" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/equiposeis84/RematesPaisa.git
-git push -u origin main
-…or push an existing repository from the command line
-git remote add origin https://github.com/equiposeis84/RematesPaisa.git
-git branch -M main
-git push -u origin main
+Interfaz de usuario del sistema de comercio electrónico RematesPaisa, construida con React + Vite. Consume la API REST del backend para gestionar productos, usuarios, pedidos y más.
 
-INICIAR SERVIDORES:
-cd backend
-node server.js
+## Requisitos Previos
 
-cd frontend
-npm install
-npm run dev
+- **Node.js** (v18 o superior)
+- **Git**
+- El **backend corriendo** en `http://localhost:3000`
+
+---
+
+## Instalación y Ejecución
+
+1. Clona el repositorio:
+```bash
+   git clone https://github.com/equiposeis84/frontend.git
+   cd frontend
+```
+
+2. Instala las dependencias:
+```bash
+   npm install
+```
+
+3. Configura las variables de entorno. Duplica `.env.example` y renómbralo `.env`, luego actualiza:
+   - `VITE_API_URL` — URL del backend (por defecto `http://localhost:3000`)
+
+4. Inicia el servidor de desarrollo:
+```bash
+   npm run dev
+```
+
+> El frontend corre por defecto en `http://localhost:5173`
+
+---
+
+## Importante
+
+Asegúrate de tener el backend corriendo antes de iniciar el frontend. Puedes seguir las instrucciones de instalación en el [repositorio del backend](https://github.com/equiposeis84/backend).
+
+---
+
+## Repositorios relacionados
+
+- [Backend](https://github.com/equiposeis84/backend)
+- [Mobile](https://github.com/equiposeis84/mobile)
+
