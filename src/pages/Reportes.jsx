@@ -230,7 +230,7 @@ const ReportCard = ({ icon: Icon, title, desc, accentColor, kpis, onClick, loadi
 // ══════════════════════════════════════════════════════════════════════════════
 
 const VentasModal = ({ open, onClose, data }) => {
-  const totalFacturas = data.length;
+  const totalTickets = data.length;
   const totalIngresos = data.reduce((s, r) => s + Number(r.Total_Factura || 0), 0);
   const porProducto = Object.entries(
     data.reduce((acc, r) => { acc[r.Producto] = (acc[r.Producto] || 0) + Number(r.Cant || 0); return acc; }, {})
@@ -254,9 +254,9 @@ const VentasModal = ({ open, onClose, data }) => {
     <Modal open={open} onClose={onClose} title="Ventas y Detalle de Compras" icon={Receipt} accentColor="#111827">
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginBottom: '24px' }}>
-        <KpiChip label="Total tickets" value={totalFacturas} color="#111827" />
+        <KpiChip label="Total tickets" value={totalTickets} color="#111827" />
         <KpiChip label="Ingresos totales" value={fmtCOP(totalIngresos)} color="#111827" />
-        <KpiChip label="Ticket promedio" value={totalFacturas ? fmtCOP(totalIngresos / totalFacturas) : '$0'} color="#111827" />
+        <KpiChip label="Ticket promedio" value={totalTickets ? fmtCOP(totalIngresos / totalTickets) : '$0'} color="#111827" />
       </div>
 
       {/* Ranking productos */}
