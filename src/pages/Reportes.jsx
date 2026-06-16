@@ -238,23 +238,23 @@ const VentasModal = ({ open, onClose, data }) => {
   const maxCant = Math.max(...porProducto.map(([, v]) => v), 1);
 
   const cols = [
-    { key: 'Factura_No', label: 'Factura' },
+    { key: 'Factura_No', label: 'Ticket' },
     { key: 'Fecha_Venta', label: 'Fecha' },
     { key: 'Cliente', label: 'Cliente' },
     { key: 'Producto', label: 'Producto' },
     { key: 'Categoria', label: 'Categoría' },
     { key: 'Cant', label: 'Cant.' },
     { key: 'Precio_Venta_COP', label: 'Precio Unit.' },
-    { key: 'Total_Factura', label: 'Total Factura' },
+    { key: 'Total_Factura', label: 'Total Ticket' },
     { key: 'Estado_Pago', label: 'Estado' },
     { key: 'Repartidor', label: 'Repartidor' },
   ];
 
   return (
-    <Modal open={open} onClose={onClose} title="Ventas y Facturación Detallada" icon={Receipt} accentColor="#111827">
+    <Modal open={open} onClose={onClose} title="Ventas y Detalle de Compras" icon={Receipt} accentColor="#111827">
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginBottom: '24px' }}>
-        <KpiChip label="Total facturas" value={totalFacturas} color="#111827" />
+        <KpiChip label="Total tickets" value={totalFacturas} color="#111827" />
         <KpiChip label="Ingresos totales" value={fmtCOP(totalIngresos)} color="#111827" />
         <KpiChip label="Ticket promedio" value={totalFacturas ? fmtCOP(totalIngresos / totalFacturas) : '$0'} color="#111827" />
       </div>
@@ -442,8 +442,8 @@ const RepartidoresModal = ({ open, onClose, data }) => {
 const REPORTES_CONFIG = [
   {
     id: 'ventas',
-    title: 'Ventas y Facturación',
-    desc: 'Facturas emitidas, clientes, productos vendidos y estado de pago.',
+    title: 'Ventas y Comprobantes',
+    desc: 'Comprobantes emitidos, clientes, productos vendidos y estado de pago.',
     icon: Receipt,
     accentColor: '#111827',
     endpoint: `${API}/ventas`,

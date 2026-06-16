@@ -181,7 +181,7 @@ const Pedidos = ({ variant }) => {
         .then(() => listar())
         .catch(err => {
           console.error("Error al eliminar:", err);
-          alert("No se puede eliminar el pedido. Es posible que tenga facturas relacionadas.\nDetalle: " + (err.response?.data?.error || err.message));
+          alert("No se puede eliminar el pedido. Es posible que tenga tickets relacionados.\nDetalle: " + (err.response?.data?.error || err.message));
         });
     }
   };
@@ -327,7 +327,7 @@ const Pedidos = ({ variant }) => {
         <html lang="es">
         <head>
           <meta charset="UTF-8"/>
-          <title>Factura Comercial - #${pedido.id_pedido}</title>
+          <title>Ticket de Compra - #${pedido.id_pedido}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
             * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -383,7 +383,7 @@ const Pedidos = ({ variant }) => {
         <body>
           <div style="text-align:center;margin-bottom:24px;" class="no-print">
             <button onclick="window.print()" style="padding:14px 40px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:1.1rem;letter-spacing:0.5px;transition:background 0.2s; box-shadow: 0 4px 6px rgba(37,99,235,0.2);">
-              Imprimir Factura
+              Imprimir Ticket
             </button>
           </div>
           <div class="ticket">
@@ -398,7 +398,7 @@ const Pedidos = ({ variant }) => {
                 </div>
               </div>
               <div class="invoice-details">
-                <div class="title">Factura</div>
+                <div class="title">Ticket de Compra</div>
                 <div class="order-id">Nº ${String(pedido.id_pedido).padStart(6, '0')}</div>
                 <div class="status-badge status-${(pedido.estado || ORDER_STATUS.PENDIENTE).toLowerCase()}">
                   ${STATUS_LABELS[pedido.estado] || pedido.estado || ORDER_STATUS.PENDIENTE}
@@ -408,7 +408,7 @@ const Pedidos = ({ variant }) => {
             <div class="ticket-body">
               <div class="info-grid">
                 <div class="info-box">
-                  <h3>Facturar A</h3>
+                  <h3>Datos del Cliente</h3>
                   <p>${pedido.usuario_nombre || 'N/A'}</p>
                   <p class="light">Documento: ${pedido.numero_documento || 'N/A'}</p>
                   ${pedido.direccion ? `<p class="light">Dirección: ${pedido.direccion}</p>` : ''}
