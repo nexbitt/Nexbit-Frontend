@@ -15,7 +15,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 import SearchBar from '../components/SearchBar';
-import { Pencil, Trash2, Package, ShoppingCart, Info, Upload, X, Search } from 'lucide-react';
+import { Pencil, Trash2, Package, ShoppingCart, Info, Upload, X, Search, AlertCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useModalScroll } from '../hooks/useModalScroll';
 
@@ -86,6 +86,33 @@ const Productos = ({ variant }) => {
   const [stockMinimo, setStockMinimo]   = useState(0);
   const [activo, setActivo]             = useState(1);
 
+  const [fieldErrors, setFieldErrors] = useState({});
+  const NAME_REGEX = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/;
+
+  const handleNameKeyDown = (e) => {
+    if (e.key.length === 1 && !NAME_REGEX.test(e.key)) e.preventDefault();
+  };
+
+  const handleNamePaste = (e) => {
+    const pasted = (e.clipboardData || window.clipboardData).getData('text');
+    if (!NAME_REGEX.test(pasted)) e.preventDefault();
+  };
+
+  const handleNumericKeyDown = (e) => {
+    if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') e.preventDefault();
+  };
+
+  const handleIntegerKeyDown = (e) => {
+    if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-' || e.key === '.') e.preventDefault();
+  };
+
+  const validateField = (field, value) => {
+    let error = '';
+    if (field === 'nombre' && value.trim().length > 0 && !NAME_REGEX.test(value)) error = 'Solo letras y espacios';
+    setFieldErrors(prev => ({ ...prev, [field]: error }));
+    return error;
+  };
+
   // ── NUEVO: estados para la imagen ───────────────────────────
   const [imagenFile, setImagenFile]       = useState(null);    // Archivo seleccionado
   const [imagenPreview, setImagenPreview] = useState(null);    // URL previa (blob o cloudinary)
@@ -121,7 +148,8 @@ const Productos = ({ variant }) => {
     setCategoriaId(""); setProveedorId(""); setNombre(""); setDescripcion("");
     setPrecioCompra(0); setPrecioVenta(0); setStockActual(0); setStockMinimo(0);
     setActivo(1); setEnEdicion(false); setIdProducto(null);
-    setImagenFile(null); setImagenPreview(null); setImagenUrlActual(null); // ← NUEVO
+    setImagenFile(null); setImagenPreview(null); setImagenUrlActual(null);
+    setFieldErrors({});
     setShowModal(false);
   };
 
@@ -170,6 +198,9 @@ const Productos = ({ variant }) => {
 
   // ── NUEVO: guardar usa FormData para enviar el archivo ───
   const guardar = async () => {
+    const errNombre = validateField('nombre', nombre);
+    if (errNombre) return;
+
     if (!nombre || !categoriaId) {
       alert("El nombre y la categoría son obligatorios");
       return;
@@ -487,7 +518,19 @@ const Productos = ({ variant }) => {
               </div>
               <div className="input-field" style={{ gridColumn: 'span 2' }}>
                 <label>Nombre del Producto *</label>
-                <input value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                <input
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  onKeyDown={handleNameKeyDown}
+                  onPaste={handleNamePaste}
+                  onBlur={() => validateField('nombre', nombre)}
+                  style={{ borderColor: fieldErrors.nombre ? '#EF4444' : undefined, borderWidth: fieldErrors.nombre ? '2px' : undefined }}
+                />
+                {fieldErrors.nombre && (
+                  <span style={{ color: '#EF4444', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                    <AlertCircle size={14} /> {fieldErrors.nombre}
+                  </span>
+                )}
               </div>
 
               <div className="input-field">
@@ -569,22 +612,22 @@ const Productos = ({ variant }) => {
 
               <div className="input-field">
                 <label>Precio Compra</label>
-                <input type="number" step="0.01" value={precioCompra} onChange={(e) => setPrecioCompra(e.target.value)} />
+                <input type="number" step="0.01" min="0" value={precioCompra} onChange={(e) => setPrecioCompra(e.target.value)} onKeyDown={handleNumericKeyDown} />
               </div>
 
               <div className="input-field">
                 <label>Precio Venta</label>
-                <input type="number" step="0.01" value={precioVenta} onChange={(e) => setPrecioVenta(e.target.value)} />
+                <input type="number" step="0.01" min="0" value={precioVenta} onChange={(e) => setPrecioVenta(e.target.value)} onKeyDown={handleNumericKeyDown} />
               </div>
 
               <div className="input-field">
                 <label>Stock Actual</label>
-                <input type="number" value={stockActual} onChange={(e) => setStockActual(e.target.value)} />
+                <input type="number" min="0" value={stockActual} onChange={(e) => setStockActual(e.target.value)} onKeyDown={handleIntegerKeyDown} />
               </div>
 
               <div className="input-field">
                 <label>Stock Mínimo</label>
-                <input type="number" value={stockMinimo} onChange={(e) => setStockMinimo(e.target.value)} />
+                <input type="number" min="0" value={stockMinimo} onChange={(e) => setStockMinimo(e.target.value)} onKeyDown={handleIntegerKeyDown} />
               </div>
 
               <div className="input-field" style={{ gridColumn: 'span 2' }}>

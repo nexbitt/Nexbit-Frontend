@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { Pencil, Trash2, Tags } from 'lucide-react';
+import { Pencil, Trash2, Tags, AlertCircle } from 'lucide-react';
 import { useModalScroll } from '../hooks/useModalScroll';
 import SearchBar from '../components/SearchBar';
 
@@ -20,6 +20,25 @@ const Categorias = () => {
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
 
+  const [fieldErrors, setFieldErrors] = useState({});
+  const NAME_REGEX = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/;
+
+  const handleKeyDown = (e) => {
+    if (e.key.length === 1 && !NAME_REGEX.test(e.key)) e.preventDefault();
+  };
+
+  const handlePaste = (e) => {
+    const pasted = (e.clipboardData || window.clipboardData).getData('text');
+    if (!NAME_REGEX.test(pasted)) e.preventDefault();
+  };
+
+  const validateField = (field, value) => {
+    let error = '';
+    if (field === 'nombre' && value.trim().length > 0 && !NAME_REGEX.test(value)) error = 'Solo letras y espacios';
+    setFieldErrors(prev => ({ ...prev, [field]: error }));
+    return error;
+  };
+
   const listar = () => {
     setLoading(true);
     api.get(URL_API)
@@ -37,6 +56,7 @@ const Categorias = () => {
     setDescripcion("");
     setEnEdicion(false); 
     setIdCategoria(null);
+    setFieldErrors({});
     setShowModal(false);
   };
 
@@ -57,6 +77,9 @@ const Categorias = () => {
 
   const guardar = () => {
     const datos = { nombre, descripcion };
+
+    const errNombre = validateField('nombre', nombre);
+    if (errNombre) return;
 
     if (!nombre) {
       alert("El nombre es obligatorio");
@@ -179,7 +202,19 @@ const Categorias = () => {
               </div>
               <div className="input-field" style={{ gridColumn: 'span 2' }}>
                 <label>Nombre de Categoría</label>
-                <input value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                <input
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onPaste={handlePaste}
+                  onBlur={() => validateField('nombre', nombre)}
+                  style={{ borderColor: fieldErrors.nombre ? '#EF4444' : undefined, borderWidth: fieldErrors.nombre ? '2px' : undefined }}
+                />
+                {fieldErrors.nombre && (
+                  <span style={{ color: '#EF4444', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                    <AlertCircle size={14} /> {fieldErrors.nombre}
+                  </span>
+                )}
               </div>
               <div className="input-field" style={{ gridColumn: 'span 2' }}>
                 <label>Descripción</label>

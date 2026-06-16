@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../api';
-import { Pencil, Trash2, Truck } from 'lucide-react';
+import { Pencil, Trash2, Truck, AlertCircle } from 'lucide-react';
 import { useModalScroll } from '../hooks/useModalScroll';
 import SearchBar from '../components/SearchBar';
 
@@ -24,6 +24,33 @@ const Proveedores = () => {
   const [direccion, setDireccion] = useState("");
   const [activo, setActivo] = useState(1);
 
+  // Validación de campo individual
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const NAME_REGEX = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/;
+  const NIT_REGEX = /^[0-9.\-]+$/;
+
+  const handleKeyDown = (e, regex) => {
+    if (e.key.length === 1 && !regex.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  const handlePaste = (e, regex) => {
+    const pasted = (e.clipboardData || window.clipboardData).getData('text');
+    if (!regex.test(pasted)) {
+      e.preventDefault();
+    }
+  };
+
+  const validateField = (field, value) => {
+    let error = '';
+    if (field === 'nombre' && value.trim().length > 0 && !NAME_REGEX.test(value)) { error = 'Solo letras y espacios'; }
+    if (field === 'nit' && value.length > 0 && !NIT_REGEX.test(value)) { error = 'Solo números, puntos y guiones'; }
+    setFieldErrors(prev => ({ ...prev, [field]: error }));
+    return error;
+  };
+
   const listar = () => {
     setLoading(true);
     api.get(URL_API)
@@ -40,6 +67,7 @@ const Proveedores = () => {
     setNit(""); setNombre(""); setTelefono(""); 
     setCorreo(""); setDireccion(""); setActivo(1);
     setEnEdicion(false); setIdProveedor(null);
+    setFieldErrors({});
     setShowModal(false);
   };
 
@@ -64,6 +92,10 @@ const Proveedores = () => {
 
   const guardar = () => {
     const datos = { nit, nombre, telefono, correo, direccion, activo };
+
+    const errNombre = validateField('nombre', nombre);
+    const errNit = validateField('nit', nit);
+    if (errNombre || errNit) return;
 
     if (!nit || !nombre) {
       alert("El NIT y el nombre son obligatorios");
@@ -197,11 +229,36 @@ const Proveedores = () => {
               </div>
               <div className="input-field">
                 <label>NIT</label>
-                <input value={nit} onChange={(e) => setNit(e.target.value)} />
+                <input
+                  value={nit}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '' || /^[0-9.\-]*$/.test(val)) setNit(val);
+                  }}
+                  onBlur={() => validateField('nit', nit)}
+                  style={{ borderColor: fieldErrors.nit ? '#EF4444' : undefined, borderWidth: fieldErrors.nit ? '2px' : undefined }}
+                />
+                {fieldErrors.nit && (
+                  <span style={{ color: '#EF4444', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                    <AlertCircle size={14} /> {fieldErrors.nit}
+                  </span>
+                )}
               </div>
               <div className="input-field">
                 <label>Nombre o Empresa</label>
-                <input value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                <input
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, NAME_REGEX)}
+                  onPaste={(e) => handlePaste(e, NAME_REGEX)}
+                  onBlur={() => validateField('nombre', nombre)}
+                  style={{ borderColor: fieldErrors.nombre ? '#EF4444' : undefined, borderWidth: fieldErrors.nombre ? '2px' : undefined }}
+                />
+                {fieldErrors.nombre && (
+                  <span style={{ color: '#EF4444', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                    <AlertCircle size={14} /> {fieldErrors.nombre}
+                  </span>
+                )}
               </div>
               <div className="input-field">
                 <label>Teléfono</label>
