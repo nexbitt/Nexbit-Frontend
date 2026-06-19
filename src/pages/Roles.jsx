@@ -1,22 +1,19 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { Pencil, ShieldCheck } from 'lucide-react';
-import { useModalScroll } from '../hooks/useModalScroll';
+import { Pencil, ShieldCheck, Plus } from 'lucide-react';
 import SearchBar from '../components/SearchBar';
+import CustomDialog from '../components/CustomDialog';
+import RolFormModal from '../components/RolFormModal';
 
 const URL_API = "/api/roles";
 
 const Roles = () => {
   const [roles, setRoles] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [selectedRol, setSelectedRol] = useState(null);
   const [loading, setLoading] = useState(true);
-  useModalScroll(showModal);
-
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
   const [searchTerm, setSearchTerm] = useState("");
-
-  const [idRol, setIdRol] = useState(null);
-  const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
 
   const listar = () => {
     setLoading(true);
@@ -26,39 +23,16 @@ const Roles = () => {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    listar();
-  }, []);
+  useEffect(() => { listar(); }, []);
 
-  const limpiarFormulario = () => {
-    setNombre(""); setDescripcion("");
-    setIdRol(null);
-    setShowModal(false);
-  };
-
-  const seleccionarRol = (r) => {
-    setIdRol(r.id_rol);
-    setNombre(r.nombre);
-    setDescripcion(r.descripcion || "");
+  const abrirRegistro = () => {
+    setSelectedRol(null);
     setShowModal(true);
   };
 
-  const guardar = () => {
-    if (!nombre) {
-      alert("El nombre del rol es obligatorio");
-      return;
-    }
-
-    api.put(`${URL_API}/${idRol}`, { nombre, descripcion })
-      .then(() => {
-        limpiarFormulario();
-        listar();
-        alert("Rol actualizado correctamente.");
-      })
-      .catch(err => {
-        console.error("Error interno:", err);
-        alert("Error al actualizar: " + (err.response?.data?.message || err.message));
-      });
+  const seleccionarRol = (r) => {
+    setSelectedRol(r);
+    setShowModal(true);
   };
 
   const filteredRoles = roles.filter(r => {
@@ -71,6 +45,10 @@ const Roles = () => {
   return (
     <>
       <div className="top-action-bar">
+        <button className="btn-add-record" onClick={abrirRegistro}>
+          <Plus size={18} style={{ marginRight: '6px' }} />
+          Añadir Rol
+        </button>
         <SearchBar
           value={searchTerm}
           onChange={setSearchTerm}
@@ -88,6 +66,7 @@ const Roles = () => {
           <div style={{ padding: '5rem 2rem', textAlign: 'center', color: '#94a3b8' }}>
             <ShieldCheck size={64} style={{ color: 'var(--primary)', opacity: 0.5, marginBottom: '1.5rem' }} />
             <h2>No hay roles registrados en el sistema</h2>
+            <p>Haz clic en "Añadir Rol" para crear el primer rol.</p>
           </div>
         ) : (
           <table className="styled-table">
@@ -117,36 +96,21 @@ const Roles = () => {
         )}
       </div>
 
-      {showModal && (
-        <div className="modal-backdrop">
-          <div className="modal-box">
-            <h2>Editar Rol</h2>
-            <div className="form-grid">
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>ID</label>
-                <input type="text" value={idRol || ''} disabled style={{ background: 'var(--border)', cursor: 'not-allowed' }}/>
-              </div>
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>Nombre del Rol</label>
-                <input value={nombre} onChange={(e) => setNombre(e.target.value)} />
-              </div>
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>Descripción</label>
-                <textarea 
-                  value={descripcion} 
-                  onChange={(e) => setDescripcion(e.target.value)} 
-                  rows={3}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                />
-              </div>
-            </div>
-            <div className="modal-btns">
-              <button className="btn-cancel" onClick={limpiarFormulario}>Cancelar</button>
-              <button className="btn-save" onClick={guardar}>Guardar Cambios</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RolFormModal
+        open={showModal}
+        onClose={() => { setShowModal(false); setSelectedRol(null); }}
+        onSuccess={listar}
+        rol={selectedRol}
+      />
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
     </>
   );
 };

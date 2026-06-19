@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ShoppingBag, Plus, Minus, Trash2, CreditCard, MapPin, Upload, FileImage, CheckCircle, X, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
+import CustomDialog from './CustomDialog';
 
 const ClienteSimulationView = () => {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ const ClienteSimulationView = () => {
   const [comprobantePreview, setComprobantePreview] = useState(null);
   const [subiendoComprobante, setSubiendoComprobante] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -64,7 +66,7 @@ const ClienteSimulationView = () => {
   const handleCheckout = async () => {
     if (cart.length === 0) return;
     if (!direccion.trim()) {
-      alert('Por favor ingresa una dirección de entrega');
+      setDialog({ open: true, type: 'validation', title: 'Dirección requerida', message: 'Por favor ingresa una dirección de entrega', onConfirm: null });
       return;
     }
     setSubmitting(true);
@@ -81,7 +83,7 @@ const ClienteSimulationView = () => {
       setCart([]);
       setCartOpen(false);
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al crear el pedido');
+      setDialog({ open: true, type: 'error', title: 'Error al crear pedido', message: err.response?.data?.message || 'Error al crear el pedido', onConfirm: null });
     } finally {
       setSubmitting(false);
     }
@@ -120,7 +122,7 @@ const ClienteSimulationView = () => {
       });
       setSuccessData(prev => ({ ...prev, comprobanteSubido: true }));
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al subir comprobante');
+      setDialog({ open: true, type: 'error', title: 'Error al subir comprobante', message: err.response?.data?.message || 'Error al subir comprobante', onConfirm: null });
     } finally {
       setSubiendoComprobante(false);
     }
@@ -361,6 +363,15 @@ const ClienteSimulationView = () => {
           </div>
         )}
       </div>
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
     </div>
   );
 };

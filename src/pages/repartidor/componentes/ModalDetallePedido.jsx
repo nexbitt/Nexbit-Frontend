@@ -1,38 +1,42 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, CheckCircle, Package } from 'lucide-react';
 import api from '../../../api';
+import CustomDialog from '../../../components/CustomDialog';
 
 const ModalDetallePedido = ({ pedido, tipo, alCerrar, alActualizar }) => {
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
+
   if (!pedido) return null;
 
   const manejarAceptar = async () => {
     try {
       await api.post(`/api/reparto/pedidos/${pedido.id_pedido}/aceptar`);
-      alert("Pedido aceptado con éxito");
+      setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Pedido aceptado con éxito', onConfirm: null });
       alActualizar();
       alCerrar();
     } catch (error) {
       if (error.response?.status === 409) {
-        alert("El pedido ya fue tomado por otro repartidor o no está disponible.");
+        setDialog({ open: true, type: 'error', title: 'No disponible', message: 'El pedido ya fue tomado por otro repartidor o no está disponible.', onConfirm: null });
         alActualizar();
         alCerrar();
       } else {
-        alert("Ocurrió un error al aceptar el pedido.");
+        setDialog({ open: true, type: 'error', title: 'Error', message: 'Ocurrió un error al aceptar el pedido.', onConfirm: null });
       }
     }
   };
 
   const manejarEntregar = async () => {
-    if (window.confirm("¿Estás seguro de que deseas confirmar la entrega de este pedido?")) {
+    setDialog({ open: true, type: 'confirm', title: 'Confirmar entrega', message: '¿Estás seguro de que deseas confirmar la entrega de este pedido?', onConfirm: async () => {
+      setDialog(prev => ({ ...prev, open: false }));
       try {
         await api.post(`/api/reparto/pedidos/${pedido.id_pedido}/entregar`);
-        alert("Entrega confirmada con éxito");
+        setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Entrega confirmada con éxito', onConfirm: null });
         alActualizar();
         alCerrar();
       } catch (error) {
-        alert("Ocurrió un error al confirmar la entrega.");
+        setDialog({ open: true, type: 'error', title: 'Error', message: 'Ocurrió un error al confirmar la entrega.', onConfirm: null });
       }
-    }
+    }});
   };
 
   return (
@@ -112,6 +116,15 @@ const ModalDetallePedido = ({ pedido, tipo, alCerrar, alActualizar }) => {
           </div>
         </div>
       </div>
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Bike, MapPin, Phone, DollarSign, Clock, Package, CheckCircle, ChevronDown, ChevronUp, User, Truck } from 'lucide-react';
 import api from '../api';
+import CustomDialog from './CustomDialog';
 
 const RepartidorSimulationView = () => {
   const [pedidos, setPedidos] = useState([]);
@@ -9,6 +10,7 @@ const RepartidorSimulationView = () => {
   const [accion, setAccion] = useState(null);
   const [filter, setFilter] = useState('todos');
   const [vistaRuta, setVistaRuta] = useState(null);
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
 
   const cargar = useCallback(async () => {
     try {
@@ -34,7 +36,7 @@ const RepartidorSimulationView = () => {
         setVistaRuta(null);
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al actualizar estado');
+      setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.message || 'Error al actualizar estado', onConfirm: null });
     } finally {
       setAccion(null);
     }
@@ -194,6 +196,15 @@ const RepartidorSimulationView = () => {
           )}
         </div>
       )}
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
     </div>
   );
 };

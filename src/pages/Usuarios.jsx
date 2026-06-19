@@ -3,6 +3,8 @@ import api from '../api';
 import { Pencil, Trash2, Users } from 'lucide-react';
 import { useModalScroll } from '../hooks/useModalScroll';
 import SearchBar from '../components/SearchBar';
+import CustomDialog from '../components/CustomDialog';
+import UsuarioFormModal from '../components/UsuarioFormModal';
 
 const URL_API = "/api/usuarios";
 
@@ -10,22 +12,15 @@ const Usuarios = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [rolesList, setRolesList] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [enEdicion, setEnEdicion] = useState(false);
+  const [selectedUsuario, setSelectedUsuario] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
   useModalScroll(showModal);
   
   // Búsqueda y filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRol, setFilterRol] = useState("ALL");
   const [filterEstado, setFilterEstado] = useState("ALL");
-  // Estados vinculados a los campos de la BD
-  const [idUsuario, setIdUsuario] = useState(null);
-  const [rolId, setRolId] = useState(1);
-  const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [numDoc, setNumDoc] = useState("");
-  const [activo, setActivo] = useState(1);
 
   const listar = () => {
     setLoading(true);
@@ -46,72 +41,26 @@ const Usuarios = () => {
     listarRoles();
   }, []);
 
-  const limpiarFormulario = () => {
-    setRolId(1); setNombre(""); setEmail(""); setPassword("");
-    setNumDoc("");
-    setActivo(1); setEnEdicion(false); setIdUsuario(null);
-    setShowModal(false);
-  };
-
   const abrirRegistro = () => {
-    limpiarFormulario();
-    const nextId = usuarios.length > 0 ? Math.max(...usuarios.map(u => u.id_usuario)) + 1 : 1;
-    setIdUsuario(nextId);
+    setSelectedUsuario(null);
     setShowModal(true);
   };
 
   const seleccionarUsuario = (u) => {
-    setIdUsuario(u.id_usuario);
-    setRolId(u.rol_id);
-    setNombre(u.nombre);
-    setEmail(u.email);
-    setNumDoc(u.numero_documento);
-    setActivo(u.activo);
-    setEnEdicion(true);
+    setSelectedUsuario(u);
     setShowModal(true);
   };
 
-  const guardar = () => {
-    const datos = {
-      rol_id: rolId, nombre, email, password,
-      numero_documento: numDoc,
-      activo
-    };
-
-    if (enEdicion) {
-      api.put(`${URL_API}/${idUsuario}`, datos)
-        .then(() => {
-          limpiarFormulario();
-          listar();
-          alert("Usuario actualizado correctamente.");
-        })
-        .catch(err => {
-          console.error("Error interno:", err);
-          alert("Error al actualizar: " + (err.response?.data?.message || err.message));
-        });
-    } else {
-      api.post(URL_API, datos)
-        .then(() => {
-          limpiarFormulario();
-          listar();
-          alert("Usuario creado con éxito.");
-        })
-        .catch(err => {
-          console.error("Error interno:", err);
-          alert("Error al crear: " + (err.response?.data?.message || err.message));
-        });
-    }
-  };
-
   const eliminar = (id) => {
-    if (window.confirm("¿Confirmar eliminación de este registro?")) {
+    setDialog({ open: true, type: 'confirm', title: 'Confirmar eliminación', message: '¿Confirmar eliminación de este registro?', onConfirm: () => {
+      setDialog({ open: false, type: 'confirm', title: '', message: '', onConfirm: null });
       api.delete(`${URL_API}/${id}`)
         .then(() => listar())
         .catch(err => {
           console.error("Error al eliminar:", err);
-          alert("No se puede eliminar el usuario. Es posible que tenga registros asociados (ventas, compras, etc.).\nDetalle: " + (err.response?.data?.error || err.message));
+          setDialog({ open: true, type: 'error', title: 'Error al eliminar', message: "No se puede eliminar el usuario. Es posible que tenga registros asociados (ventas, compras, etc.).\nDetalle: " + (err.response?.data?.error || err.message), onConfirm: null });
         });
-    }
+    }});
   };
 
   const filteredUsuarios = usuarios.filter(u => {
@@ -224,57 +173,22 @@ const Usuarios = () => {
         </div>
       )}
 
-      {showModal && (
-        <div className="modal-backdrop">
-          <div className="modal-box">
-            <h2>{enEdicion ? "Actualizar Usuario" : "Nuevo Registro"}</h2>
-            <div className="form-grid">
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>ID</label>
-                <input type="text" value={idUsuario || ''} disabled style={{ background: 'var(--border)', cursor: 'not-allowed' }}/>
-              </div>
-              <div className="input-field">
-                <label>Rol</label>
-                <select value={rolId} onChange={(e) => setRolId(Number(e.target.value))}>
-                  <option value="" disabled>Seleccione un rol...</option>
-                  {rolesList.map(r => (
-                    <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="input-field">
-                <label>Nombre Completo</label>
-                <input value={nombre} onChange={(e) => setNombre(e.target.value)} />
-              </div>
-              <div className="input-field">
-                <label>Email</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              </div>
-              {!enEdicion && (
-                <div className="input-field">
-                  <label>Password</label>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                </div>
-              )}
-              <div className="input-field">
-                <label>Numero Documento</label>
-                <input value={numDoc} onChange={(e) => setNumDoc(e.target.value)} />
-              </div>
-              <div className="input-field">
-                <label>Estado</label>
-                <select value={activo} onChange={(e) => setActivo(Number(e.target.value))}>
-                  <option value={1}>Activo</option>
-                  <option value={0}>Inactivo</option>
-                </select>
-              </div>
-            </div>
-            <div className="modal-btns">
-              <button className="btn-cancel" onClick={limpiarFormulario}>Cancelar</button>
-              <button className="btn-save" onClick={guardar}>Guardar Cambios</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <UsuarioFormModal
+        open={showModal}
+        onClose={() => { setShowModal(false); setSelectedUsuario(null); }}
+        onSuccess={listar}
+        usuario={selectedUsuario}
+        rolesList={rolesList}
+      />
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
     </>
   );
 };

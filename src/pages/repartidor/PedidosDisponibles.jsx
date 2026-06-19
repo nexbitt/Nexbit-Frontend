@@ -4,6 +4,7 @@ import { io } from 'socket.io-client';
 import api from '../../api';
 import { Package, MapPin, DollarSign, Clock, ChevronDown, ChevronUp, Zap, Loader, AlertTriangle, User, X, MessageSquare } from 'lucide-react';
 import ChatModal from '../../components/ChatModal';
+import CustomDialog from '../../components/CustomDialog';
 
 const PedidosDisponibles = () => {
   const [disponibles, setDisponibles] = useState([]);
@@ -14,6 +15,7 @@ const PedidosDisponibles = () => {
   const [alertaModal, setAlertaModal] = useState(null);
   const [showChat, setShowChat] = useState(false);
   const [chatPedidoId, setChatPedidoId] = useState(null);
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
   const navigate = useNavigate();
 
   const cargar = useCallback(async () => {
@@ -51,7 +53,7 @@ const PedidosDisponibles = () => {
       await api.post(`/api/reparto/${id}/tomar`);
       navigate('/repartidor/activo');
     } catch (err) {
-      alert(err.response?.data?.error || 'Error al tomar el pedido');
+      setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.error || 'Error al tomar el pedido', onConfirm: null });
       cargar();
     } finally {
       setTomando(null);
@@ -238,6 +240,15 @@ const PedidosDisponibles = () => {
           onClose={() => { setShowChat(false); setChatPedidoId(null); }}
         />
       )}
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
     </>
   );
 };

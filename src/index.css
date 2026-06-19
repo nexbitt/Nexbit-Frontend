@@ -326,7 +326,7 @@ input:focus, select:focus, .search-input:focus, .search-select:focus {
   overflow-y: auto;           /* scroll interno con rueda del mouse */
   overscroll-behavior: contain;
   padding: 2.5rem; 
-  border-radius: 24px; 
+  border-radius: 16px; 
   border: 1px solid rgba(0,0,0,0.05); 
   box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
   animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -340,12 +340,24 @@ input:focus, select:focus, .search-input:focus, .search-select:focus {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+.modal-box input:not([type="file"]),
+.modal-box select,
+.modal-box textarea {
+  height: 42px;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.modal-box textarea {
+  height: auto;
+  min-height: 42px;
+}
+
 .modal-box h2 {
   margin-top: 0;
   color: var(--text-main);
-  font-size: 1.8rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: 18px;
+  font-weight: 700;
   margin-bottom: 1.5rem;
 }
 
@@ -363,52 +375,57 @@ input:focus, select:focus, .search-input:focus, .search-select:focus {
 }
 
 .input-field label { 
-  font-size: 0.85rem; 
+  font-size: 12px; 
   color: var(--text-muted); 
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  margin-bottom: 6px;
 }
 
 .modal-btns { 
   display: flex; 
   justify-content: flex-end; 
-  gap: 1rem; 
-  margin-top: 2.5rem; 
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
+  gap: 12px; 
+  margin-top: 24px; 
+  padding-top: 16px;
+  border-top: 1px solid #E5E7EB;
 }
 
 .btn-cancel { 
   background: transparent; 
-  color: var(--text-main); 
-  border: 1px solid var(--border); 
-  padding: 0.8rem 1.8rem; 
-  border-radius: var(--radius-pill); 
+  color: #111827; 
+  border: 1px solid #D1D5DB; 
+  height: 42px;
+  padding: 0 24px; 
+  border-radius: 24px; 
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer; 
+  display: inline-flex;
+  align-items: center;
   transition: var(--transition);
 }
 
 .btn-cancel:hover {
-  background: var(--input-bg);
+  background: #F9FAFB;
 }
 
 .btn-save { 
-  background: var(--primary); 
+  background: #111827; 
   color: white; 
   border: none; 
-  padding: 0.8rem 2rem; 
-  border-radius: var(--radius-pill); 
+  height: 42px;
+  padding: 0 24px; 
+  border-radius: 24px; 
+  font-size: 13px;
   font-weight: 600; 
   cursor: pointer; 
+  display: inline-flex;
+  align-items: center;
   transition: var(--transition);
 }
 
 .btn-save:hover {
-  background: var(--primary-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  background: #333;
 }
 
 .btn-primary-sm {
@@ -3618,6 +3635,7 @@ input:focus, select:focus, .search-input:focus, .search-select:focus {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -6856,5 +6874,142 @@ input:focus, select:focus, .search-input:focus, .search-select:focus {
 @keyframes simFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CUSTOM DIALOG — Sistema unificado de diálogos (Reemplaza alert/confirm)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.cd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 16px;
+  animation: cdFadeIn 0.2s ease;
+}
+
+@keyframes cdFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cd-box {
+  background: #FFFFFF;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  padding: 32px 28px 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  animation: cdSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cdSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cd-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.cd-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+
+.cd-message {
+  font-size: 13px;
+  color: #6B7280;
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+.cd-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.cd-actions--single {
+  justify-content: center;
+}
+
+.cd-btn {
+  padding: 10px 24px;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  border: none;
+  min-width: 120px;
+}
+
+.cd-btn--primary {
+  background: #111827;
+  color: #FFFFFF;
+}
+
+.cd-btn--primary:hover {
+  background: #333333;
+}
+
+.cd-btn--danger {
+  background: #EF4444;
+  color: #FFFFFF;
+}
+
+.cd-btn--danger:hover {
+  background: #DC2626;
+}
+
+.cd-btn--cancel {
+  background: #FFFFFF;
+  color: #111827;
+  border: 1px solid #D1D5DB;
+}
+
+.cd-btn--cancel:hover {
+  background: #F9FAFB;
+}
+
+/* ── Validation error list inside dialog ────────────── */
+.cd-error-list {
+  background: #F9FAFB;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 0 0 20px;
+  text-align: left;
+  font-size: 13px;
+  color: #6B7280;
+  line-height: 1.6;
+}
+
+.cd-error-list li {
+  margin-bottom: 4px;
+  list-style: none;
+}
+
+.cd-error-list li::before {
+  content: '•';
+  color: #F59E0B;
+  font-weight: bold;
+  margin-right: 8px;
 }
 

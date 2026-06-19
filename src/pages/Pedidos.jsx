@@ -9,6 +9,8 @@ import { Pencil, Trash2, ShoppingCart, Download, Eye, X, Package, AlertTriangle,
 import { useNavigate } from 'react-router-dom';
 import { useModalScroll } from '../hooks/useModalScroll';
 import ChatModal from '../components/ChatModal';
+import CustomDialog from '../components/CustomDialog';
+import AdminCheckoutModal from '../components/AdminCheckoutModal';
 import SearchBar from '../components/SearchBar';
 import { ORDER_STATUS, FSM_STATUS, STATUS_LABELS, STATUS_COLORS, TICKET_STATUS_COLORS, ALL_STATUSES } from '../constants/orderStatuses';
 import { useSocket } from '../context/SocketContext';
@@ -21,6 +23,7 @@ const Pedidos = ({ variant }) => {
   const [pedidos, setPedidos] = useState([]);
   const [usuariosList, setUsuariosList] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [showAdminCheckout, setShowAdminCheckout] = useState(false);
   const [enEdicion, setEnEdicion] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -32,6 +35,8 @@ const Pedidos = ({ variant }) => {
   // Modal de confirmación de borrado
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePedidoId, setDeletePedidoId] = useState(null);
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
+  const [promptMotivo, setPromptMotivo] = useState({ open: false, pedidoId: null, motivo: '' });
 
   // Upload comprobante
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -56,7 +61,7 @@ const Pedidos = ({ variant }) => {
   const navigate = useNavigate();
   const isAdminView = variant === 'admin' || !variant;
   const isGuestView = variant === 'guest';
-  useModalScroll(showModal || showDetailModal || showUploadModal || showDeleteModal);
+  useModalScroll(showModal || showAdminCheckout || showDetailModal || showUploadModal || showDeleteModal);
 
   // Búsqueda y filtros (admin)
   const [searchTerm, setSearchTerm] = useState("");
@@ -96,7 +101,7 @@ const Pedidos = ({ variant }) => {
       setPedidoDetalle(res.data);
     } catch (err) {
       console.error('Error cargando detalles:', err);
-      alert('No se pudieron cargar los detalles del pedido.');
+      setDialog({ open: true, type: 'error', title: 'Error', message: 'No se pudieron cargar los detalles del pedido.', onConfirm: null });
       setShowDetailModal(false);
     } finally {
       setDetailLoading(false);
@@ -105,15 +110,16 @@ const Pedidos = ({ variant }) => {
 
   // --- LÓGICA RF011: Cancelación para el Cliente ---
   const cancelarMiPedido = async (id) => {
-    if (window.confirm("¿Estás seguro de que deseas cancelar este pedido?")) {
+    setDialog({ open: true, type: 'confirm', title: 'Cancelar pedido', message: '¿Estás seguro de que deseas cancelar este pedido?', onConfirm: async () => {
+      setDialog(prev => ({ ...prev, open: false }));
       try {
         await api.put(`${URL_API}/${id}/cancelar`);
-        listar(); // Refrescamos la lista automáticamente
-        alert("Pedido cancelado correctamente.");
+        listar();
+        setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Pedido cancelado correctamente.', onConfirm: null });
       } catch (err) {
-        alert(err.response?.data?.message || "Error al cancelar");
+        setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.message || "Error al cancelar", onConfirm: null });
       }
-    }
+    }});
   };
 
   const limpiarFormulario = () => {
@@ -123,10 +129,7 @@ const Pedidos = ({ variant }) => {
   };
 
   const abrirRegistro = () => {
-    limpiarFormulario();
-    const nextId = pedidos.length > 0 ? Math.max(...pedidos.map(p => p.id_pedido)) + 1 : 1;
-    setIdPedido(nextId);
-    setShowModal(true);
+    setShowAdminCheckout(true);
   };
 
   const seleccionarPedido = (p) => {
@@ -146,7 +149,7 @@ const Pedidos = ({ variant }) => {
     };
 
     if (!usuarioId && !enEdicion) {
-      alert("El usuario es obligatorio para crear un pedido");
+      setDialog({ open: true, type: 'validation', title: 'Campo requerido', message: 'El usuario es obligatorio para crear un pedido', onConfirm: null });
       return;
     }
 
@@ -155,35 +158,36 @@ const Pedidos = ({ variant }) => {
         .then(() => {
           limpiarFormulario();
           listar();
-          alert("Pedido actualizado correctamente.");
+          setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Pedido actualizado correctamente.', onConfirm: null });
         })
         .catch(err => {
           console.error("Error interno:", err);
-          alert("Error al actualizar: " + (err.response?.data?.message || err.message));
+          setDialog({ open: true, type: 'error', title: 'Error al actualizar', message: "Error al actualizar: " + (err.response?.data?.message || err.message), onConfirm: null });
         });
     } else {
       api.post(URL_API, datos)
         .then(() => {
           limpiarFormulario();
           listar();
-          alert("Pedido creado con éxito.");
+          setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Pedido creado con éxito.', onConfirm: null });
         })
         .catch(err => {
           console.error("Error interno:", err);
-          alert("Error al crear: " + (err.response?.data?.message || err.message));
+          setDialog({ open: true, type: 'error', title: 'Error al crear', message: "Error al crear: " + (err.response?.data?.message || err.message), onConfirm: null });
         });
     }
   };
 
   const eliminar = (id) => {
-    if (window.confirm("¿Confirmar eliminación de este registro?")) {
+    setDialog({ open: true, type: 'confirm', title: 'Confirmar eliminación', message: '¿Confirmar eliminación de este registro?', onConfirm: () => {
+      setDialog({ open: false, type: 'confirm', title: '', message: '', onConfirm: null });
       api.delete(`${URL_API}/${id}`)
         .then(() => listar())
         .catch(err => {
           console.error("Error al eliminar:", err);
-          alert("No se puede eliminar el pedido. Es posible que tenga tickets relacionados.\nDetalle: " + (err.response?.data?.error || err.message));
+          setDialog({ open: true, type: 'error', title: 'Error al eliminar', message: "No se puede eliminar el pedido. Es posible que tenga tickets relacionados.\nDetalle: " + (err.response?.data?.error || err.message), onConfirm: null });
         });
-    }
+    }});
   };
 
   const eliminarMiPedido = async (id) => {
@@ -191,7 +195,7 @@ const Pedidos = ({ variant }) => {
       await api.put(`${URL_API}/${id}/eliminar`);
       listar();
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al eliminar el pedido');
+      setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.message || 'Error al eliminar el pedido', onConfirm: null });
     }
   };
 
@@ -235,7 +239,7 @@ const Pedidos = ({ variant }) => {
       await api.post(`${URL_API}/${uploadPedidoId}/subir-comprobante`, formData);
       setShowUploadModal(false);
       listar();
-      alert('Comprobante enviado con éxito. El administrador lo revisará.');
+      setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Comprobante enviado con éxito. El administrador lo revisará.', onConfirm: null });
     } catch (err) {
       setUploadError(err.response?.data?.message || 'Error al subir comprobante');
     } finally {
@@ -244,17 +248,19 @@ const Pedidos = ({ variant }) => {
   };
 
   const aprobarPago = async (pedidoId) => {
-    if (!window.confirm('¿Aprobar el pago de este pedido?')) return;
-    setActionLoading(true);
-    try {
-      await api.put(`${URL_API}/${pedidoId}/aprobar-pago`);
-      listar();
-      alert('Pago aprobado. Pedido disponible para repartidor.');
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error al aprobar pago');
-    } finally {
-      setActionLoading(false);
-    }
+    setDialog({ open: true, type: 'confirm', title: 'Aprobar pago', message: '¿Aprobar el pago de este pedido?', onConfirm: async () => {
+      setDialog(prev => ({ ...prev, open: false }));
+      setActionLoading(true);
+      try {
+        await api.put(`${URL_API}/${pedidoId}/aprobar-pago`);
+        listar();
+        setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Pago aprobado. Pedido disponible para repartidor.', onConfirm: null });
+      } catch (err) {
+        setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.message || 'Error al aprobar pago', onConfirm: null });
+      } finally {
+        setActionLoading(false);
+      }
+    }});
   };
 
   const enviarComentarioAdmin = async () => {
@@ -263,24 +269,29 @@ const Pedidos = ({ variant }) => {
     try {
       await api.put(`${URL_API}/${pedidoDetalle.id_pedido}/enviar-comentario`, { comentario: adminComment.trim() });
       setAdminComment('');
-      alert('Comentario enviado correctamente.');
+      setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Comentario enviado correctamente.', onConfirm: null });
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al enviar comentario');
+      setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.message || 'Error al enviar comentario', onConfirm: null });
     } finally {
       setCommentSending(false);
     }
   };
 
   const rechazarPago = async (pedidoId) => {
-    const motivo = window.prompt('Motivo del rechazo:');
-    if (!motivo) return;
+    setPromptMotivo({ open: true, pedidoId, motivo: '' });
     setActionLoading(true);
+  };
+
+  const ejecutarRechazoPago = async () => {
+    const { pedidoId, motivo } = promptMotivo;
+    if (!motivo.trim()) return;
+    setPromptMotivo({ ...promptMotivo, open: false });
     try {
       await api.put(`${URL_API}/${pedidoId}/rechazar-pago`, { motivo });
       listar();
-      alert('Pago rechazado.');
+      setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Pago rechazado.', onConfirm: null });
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al rechazar pago');
+      setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.message || 'Error al rechazar pago', onConfirm: null });
     } finally {
       setActionLoading(false);
     }
@@ -471,12 +482,12 @@ const Pedidos = ({ variant }) => {
         ventanaTicket.document.write(ticketHTML);
         ventanaTicket.document.close();
       } else {
-        alert('Por favor permite ventanas emergentes para descargar el ticket.');
+        setDialog({ open: true, type: 'validation', title: 'Permiso requerido', message: 'Por favor permite ventanas emergentes para descargar el ticket.', onConfirm: null });
       }
 
     } catch (err) {
       console.error("Error al generar ticket:", err);
-      alert("No se pudo generar el ticket de compra. " + (err.response?.data?.message || err.message));
+      setDialog({ open: true, type: 'error', title: 'Error', message: "No se pudo generar el ticket de compra. " + (err.response?.data?.message || err.message), onConfirm: null });
     }
   };
 
@@ -804,6 +815,15 @@ const Pedidos = ({ variant }) => {
           </div>
         </div>
       )}
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
       </>
     );
   }
@@ -991,6 +1011,12 @@ const Pedidos = ({ variant }) => {
         </div>
       )}
 
+      <AdminCheckoutModal
+        open={showAdminCheckout}
+        onClose={() => setShowAdminCheckout(false)}
+        onSuccess={() => listar()}
+      />
+
         {/* ── MODAL DETALLE DE PEDIDO (ADMIN) ───────────────────────── */}
       {showDetailModal && (
         <div className="modal-backdrop" onClick={() => { setShowDetailModal(false); setShowPaymentReview(false); }}>
@@ -1007,17 +1033,19 @@ const Pedidos = ({ variant }) => {
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                 {pedidoDetalle && (pedidoDetalle.estado === ORDER_STATUS.PENDIENTE || pedidoDetalle.estado === ORDER_STATUS.EN_REVISION) && (
                   <button
-                    onClick={async () => {
-                      if (!window.confirm('¿Cancelar este pedido?')) return;
-                      try {
-                        await api.put(`${URL_API}/${pedidoDetalle.id_pedido}/cancelar`);
-                        setShowDetailModal(false);
-                        setShowPaymentReview(false);
-                        listar();
-                        fetchPendingReviewCount();
-                      } catch (err) {
-                        alert(err.response?.data?.message || 'Error al cancelar');
-                      }
+                    onClick={() => {
+                      setDialog({ open: true, type: 'confirm', title: 'Cancelar pedido', message: '¿Cancelar este pedido?', onConfirm: async () => {
+                        setDialog(prev => ({ ...prev, open: false }));
+                        try {
+                          await api.put(`${URL_API}/${pedidoDetalle.id_pedido}/cancelar`);
+                          setShowDetailModal(false);
+                          setShowPaymentReview(false);
+                          listar();
+                          fetchPendingReviewCount();
+                        } catch (err) {
+                          setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.message || 'Error al cancelar', onConfirm: null });
+                        }
+                      }});
                     }}
                     style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
                     title="Cancelar pedido"
@@ -1129,23 +1157,25 @@ const Pedidos = ({ variant }) => {
 
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                       <button
-                        onClick={async () => {
-                          if (!window.confirm('¿Aceptar el pago de este pedido?')) return;
-                          setActionLoading(true);
-                          try {
-                            const data = { accion: 'ACEPTAR' };
-                            if (adminComment.trim()) data.nota = adminComment.trim();
-                            await api.patch(`${URL_ADMIN}/pedidos/${pedidoDetalle.id_pedido}/gestion`, data);
-                            setShowDetailModal(false);
-                            setShowPaymentReview(false);
-                            listar();
-                            fetchPendingReviewCount();
-                            alert('Pedido aceptado. Ahora es visible para repartidores.');
-                          } catch (err) {
-                            alert(err.response?.data?.message || 'Error al aceptar pedido');
-                          } finally {
-                            setActionLoading(false);
-                          }
+                        onClick={() => {
+                          setDialog({ open: true, type: 'confirm', title: 'Aceptar pago', message: '¿Aceptar el pago de este pedido?', onConfirm: async () => {
+                            setDialog(prev => ({ ...prev, open: false }));
+                            setActionLoading(true);
+                            try {
+                              const data = { accion: 'ACEPTAR' };
+                              if (adminComment.trim()) data.nota = adminComment.trim();
+                              await api.patch(`${URL_ADMIN}/pedidos/${pedidoDetalle.id_pedido}/gestion`, data);
+                              setShowDetailModal(false);
+                              setShowPaymentReview(false);
+                              listar();
+                              fetchPendingReviewCount();
+                              setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Pedido aceptado. Ahora es visible para repartidores.', onConfirm: null });
+                            } catch (err) {
+                              setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.message || 'Error al aceptar pedido', onConfirm: null });
+                            } finally {
+                              setActionLoading(false);
+                            }
+                          }});
                         }}
                         disabled={actionLoading}
                         style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: '#15803d', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', opacity: actionLoading ? 0.7 : 1, minWidth: 120 }}
@@ -1162,9 +1192,9 @@ const Pedidos = ({ variant }) => {
                             setShowPaymentReview(false);
                             listar();
                             fetchPendingReviewCount();
-                            alert('Pedido rechazado.');
+                            setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Pedido rechazado.', onConfirm: null });
                           } catch (err) {
-                            alert(err.response?.data?.message || 'Error al rechazar pedido');
+                            setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.message || 'Error al rechazar pedido', onConfirm: null });
                           } finally {
                             setActionLoading(false);
                           }
@@ -1240,6 +1270,34 @@ const Pedidos = ({ variant }) => {
           onClose={() => { setShowChat(false); setChatPedidoId(null); }}
         />
       )}
+
+      {promptMotivo.open && (
+        <div className="modal-backdrop" onClick={() => setPromptMotivo({ ...promptMotivo, open: false })}>
+          <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+            <h2>Motivo del rechazo</h2>
+            <textarea
+              className="form-input"
+              value={promptMotivo.motivo}
+              onChange={(e) => setPromptMotivo({ ...promptMotivo, motivo: e.target.value })}
+              rows={3}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', fontFamily: 'inherit', marginTop: '1rem' }}
+            />
+            <div className="modal-btns" style={{ marginTop: '1rem' }}>
+              <button className="btn-cancel" onClick={() => setPromptMotivo({ ...promptMotivo, open: false })}>Cancelar</button>
+              <button className="btn-save" onClick={ejecutarRechazoPago}>Rechazar pago</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
     </>
   );
 };

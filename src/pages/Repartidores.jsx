@@ -4,6 +4,7 @@ import { MapPin, Eye, CheckCircle, XCircle, Clock, Trash2, ArrowLeft } from 'luc
 import { useModalScroll } from '../hooks/useModalScroll';
 import { ORDER_STATUS, STATUS_LABELS } from '../constants/orderStatuses';
 import SearchBar from '../components/SearchBar';
+import CustomDialog from '../components/CustomDialog';
 
 const URL_API = "/api/repartidores";
 
@@ -16,6 +17,8 @@ const Repartidores = () => {
   // Modal de Detalle de Pedido
   const [selectedPedido, setSelectedPedido] = useState(null);
   const [showPedidoModal, setShowPedidoModal] = useState(false);
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
+  const [notasPrompt, setNotasPrompt] = useState({ open: false, pedidoId: null, nuevoEstado: null, notas: '' });
   useModalScroll(showPedidoModal);
 
   // Filtros vista principal
@@ -56,7 +59,7 @@ const Repartidores = () => {
       fetchPedidosSinAsignar();
     } catch (err) {
       console.error("Error al cargar detalle del repartidor:", err);
-      alert("Error al cargar detalle");
+      setDialog({ open: true, type: 'error', title: 'Error', message: 'Error al cargar detalle', onConfirm: null });
     }
   };
 
@@ -69,7 +72,7 @@ const Repartidores = () => {
       fetchRepartidores();
     } catch (err) {
       console.error("Error al cambiar estado:", err);
-      alert("Error al cambiar el estado del repartidor");
+      setDialog({ open: true, type: 'error', title: 'Error', message: 'Error al cambiar el estado del repartidor', onConfirm: null });
     }
   };
 
@@ -77,32 +80,38 @@ const Repartidores = () => {
     if (!pedidoId) return;
     try {
       await api.post(`${URL_API}/${selectedRepartidor.id_usuario}/asignar-pedido`, { pedido_id: pedidoId });
-      alert("Pedido asignado exitosamente");
+      setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Pedido asignado exitosamente', onConfirm: null });
       verDetalleRepartidor(selectedRepartidor.id_usuario);
     } catch (err) {
       console.error("Error al asignar pedido:", err);
-      alert("Error al asignar el pedido");
+      setDialog({ open: true, type: 'error', title: 'Error', message: 'Error al asignar el pedido', onConfirm: null });
     }
   };
 
   const desasignarPedido = async (pedidoId) => {
-    if (!window.confirm("¿Seguro que deseas desasignar este pedido del repartidor?")) return;
-    try {
-      await api.put(`${URL_API}/pedidos/${pedidoId}/desasignar`);
-      alert("Pedido desasignado exitosamente");
-      verDetalleRepartidor(selectedRepartidor.id_usuario);
-    } catch (err) {
-      console.error("Error al desasignar pedido:", err);
-      alert("Error al desasignar el pedido");
-    }
+    setDialog({ open: true, type: 'confirm', title: 'Confirmar desasignación', message: '¿Seguro que deseas desasignar este pedido del repartidor?', onConfirm: async () => {
+      setDialog({ open: false, type: 'confirm', title: '', message: '', onConfirm: null });
+      try {
+        await api.put(`${URL_API}/pedidos/${pedidoId}/desasignar`);
+        setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Pedido desasignado exitosamente', onConfirm: null });
+        verDetalleRepartidor(selectedRepartidor.id_usuario);
+      } catch (err) {
+        console.error("Error al desasignar pedido:", err);
+        setDialog({ open: true, type: 'error', title: 'Error', message: 'Error al desasignar el pedido', onConfirm: null });
+      }
+    }});
   };
 
   const cambiarEstadoPedido = async (pedidoId, nuevoEstado) => {
-    const notas = prompt("Notas adicionales para este cambio de estado (opcional):");
-    if (notas === null) return;
+    setNotasPrompt({ open: true, pedidoId, nuevoEstado, notas: '' });
+  };
+
+  const ejecutarCambioEstado = async () => {
+    const { pedidoId, nuevoEstado, notas } = notasPrompt;
+    setNotasPrompt({ ...notasPrompt, open: false });
     try {
       await api.put(`${URL_API}/pedidos/${pedidoId}/estado`, { estado: nuevoEstado, notas });
-      alert("Estado del pedido actualizado");
+      setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Estado del pedido actualizado', onConfirm: null });
       verDetalleRepartidor(selectedRepartidor.id_usuario);
       if (showPedidoModal) {
         setShowPedidoModal(false);
@@ -110,7 +119,7 @@ const Repartidores = () => {
       }
     } catch (err) {
       console.error("Error al actualizar estado del pedido:", err);
-      alert("Error al actualizar estado");
+      setDialog({ open: true, type: 'error', title: 'Error', message: 'Error al actualizar estado', onConfirm: null });
     }
   };
 
@@ -132,6 +141,7 @@ const Repartidores = () => {
   // ── VISTA DETALLE ──
   if (selectedRepartidor) {
     return (
+      <>
       <div className="repartidor-detail-view">
         <button className="repartidor-back-btn" onClick={() => setSelectedRepartidor(null)}>
           <ArrowLeft size={16} /> Volver a Repartidores
@@ -279,27 +289,6 @@ const Repartidores = () => {
                     </button>
                   </div>
                 </div>
-
-                <div className="repartidor-modal-section">
-                  <h4>Historial de Seguimiento</h4>
-                  {selectedPedido.seguimiento && selectedPedido.seguimiento.length > 0 ? (
-                    <div className="repartidor-timeline">
-                      {selectedPedido.seguimiento.map(seg => (
-                        <div key={seg.id_seguimiento} className="repartidor-timeline-item">
-                          <div className="repartidor-timeline-date">
-                            {new Date(seg.fecha).toLocaleString()} por {seg.usuario?.nombre}
-                          </div>
-                          <div className="repartidor-timeline-transition">
-                            {seg.estado_anterior || 'CREACIÓN'} &rarr; {seg.estado_nuevo}
-                          </div>
-                          {seg.notas && <div className="repartidor-timeline-notes">"{seg.notas}"</div>}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ color: '#94a3b8' }}>No hay historial registrado.</p>
-                  )}
-                </div>
               </div>
 
               <div className="modal-btns" style={{ marginTop: '2rem' }}>
@@ -308,7 +297,36 @@ const Repartidores = () => {
             </div>
           </div>
         )}
+
+        {notasPrompt.open && (
+          <div className="modal-backdrop" onClick={() => setNotasPrompt({ ...notasPrompt, open: false })}>
+            <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+              <h2>Notas adicionales</h2>
+              <p style={{ color: '#64748b', marginBottom: '1rem' }}>Notas adicionales para este cambio de estado (opcional):</p>
+              <textarea
+                className="form-input"
+                value={notasPrompt.notas}
+                onChange={(e) => setNotasPrompt({ ...notasPrompt, notas: e.target.value })}
+                rows={3}
+                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', fontFamily: 'inherit' }}
+              />
+              <div className="modal-btns" style={{ marginTop: '1rem' }}>
+                <button className="btn-cancel" onClick={() => setNotasPrompt({ ...notasPrompt, open: false })}>Cancelar</button>
+                <button className="btn-save" onClick={ejecutarCambioEstado}>Continuar</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
+    </>
     );
   }
 
@@ -395,6 +413,15 @@ const Repartidores = () => {
           </table>
         )}
       </div>
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
     </>
   );
 };
