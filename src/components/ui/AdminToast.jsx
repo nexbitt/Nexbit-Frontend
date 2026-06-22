@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Bell, X, PackageSearch, CircleCheck } from 'lucide-react';
-import { useSocket } from '../context/SocketContext';
+import { useSocket } from '../../context/SocketContext';
 
 const AdminToast = () => {
   const [toasts, setToasts] = useState([]);

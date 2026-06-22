@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import api from '../api';
+import api from '../../api';
 import CustomDialog from './CustomDialog';
 import { Plus, X, Trash2, MapPin, FileText, Upload, Loader2, ChevronDown, User, Package } from 'lucide-react';
 

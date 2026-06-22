@@ -8,9 +8,9 @@ import api from '../api';
 import { Pencil, Trash2, ShoppingCart, Download, Eye, X, Package, AlertTriangle, Upload, CheckCircle, XCircle, AlertCircle, FileImage, MessageSquare, Search, Filter, Calendar, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useModalScroll } from '../hooks/useModalScroll';
-import ChatModal from '../components/ChatModal';
-import CustomDialog from '../components/CustomDialog';
-import AdminCheckoutModal from '../components/AdminCheckoutModal';
+import ChatModal from '../components/features/ChatModal';
+import CustomDialog from '../components/ui/CustomDialog';
+import AdminCheckoutModal from '../components/ui/AdminCheckoutModal';
 import { ORDER_STATUS, FSM_STATUS, STATUS_LABELS, STATUS_COLORS, TICKET_STATUS_COLORS, ALL_STATUSES } from '../constants/orderStatuses';
 import { useSocket } from '../context/SocketContext';
 
@@ -333,176 +333,16 @@ const Pedidos = ({ variant }) => {
 
   const descargarTicket = async (pedidoId) => {
     try {
-      const res = await api.get(`${URL_API}/${pedidoId}/ticket`);
-      const pedido = res.data;
-      const detalles = pedido.detalles || [];
-
-      const filasProductos = detalles.length > 0
-        ? detalles.map(d => `
-          <tr>
-            <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">${d.producto_nombre}</td>
-            <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;text-align:center;">${d.cantidad}</td>
-            <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;text-align:right;">$${Number(d.precio_unitario).toLocaleString()}</td>
-            <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;text-align:right;">$${Number(d.subtotal).toLocaleString()}</td>
-          </tr>
-        `).join('')
-        : `<tr><td colspan="4" style="padding:12px;text-align:center;color:#94a3b8;">Este pedido no tiene productos detallados</td></tr>`;
-
-      const ticketHTML = `
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-          <meta charset="UTF-8"/>
-          <title>Ticket de Compra - #${pedido.id_pedido}</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Inter', sans-serif; background: #e2e8f0; padding: 40px 20px; color: #1e293b; }
-            .ticket { max-width: 800px; margin: 0 auto; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
-            .ticket-header { padding: 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; }
-            .company-info .brand { font-size: 2rem; font-weight: 800; color: #0f172a; letter-spacing: -1px; margin-bottom: 8px; }
-            .company-info .details { font-size: 0.85rem; color: #64748b; line-height: 1.6; }
-            .invoice-details { text-align: right; }
-            .invoice-details .title { font-size: 1.5rem; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
-            .invoice-details .order-id { font-size: 1rem; color: #64748b; font-weight: 500; }
-            .ticket-body { padding: 40px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
-            .info-box { background: #f8fafc; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0; }
-            .info-box h3 { font-size: 0.85rem; text-transform: uppercase; color: #64748b; font-weight: 700; margin-bottom: 12px; letter-spacing: 1px; }
-            .info-box p { font-size: 0.95rem; color: #0f172a; font-weight: 500; margin-bottom: 4px; }
-            .info-box .light { color: #64748b; font-weight: 400; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
-            thead th { background: #0f172a; color: #fff; padding: 16px; font-size: 0.85rem; text-transform: uppercase; font-weight: 600; text-align: left; letter-spacing: 1px; }
-            thead th:nth-child(2), thead th:nth-child(3), thead th:nth-child(4) { text-align: center; }
-            thead th:nth-child(3), thead th:nth-child(4) { text-align: right; }
-            tbody td { padding: 16px; font-size: 0.95rem; color: #334155; border-bottom: 1px solid #e2e8f0; }
-            tbody tr:nth-child(even) { background: #f8fafc; }
-            .total-section { display: flex; justify-content: flex-end; }
-            .total-box { width: 300px; background: #f8fafc; padding: 24px; border-radius: 8px; border: 1px solid #e2e8f0; }
-            .total-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
-            .total-row.final { border-top: 2px solid #cbd5e1; padding-top: 16px; margin-top: 8px; }
-            .total-row .label { font-size: 0.9rem; font-weight: 600; color: #64748b; }
-            .total-row.final .label { font-size: 1.2rem; font-weight: 800; color: #0f172a; }
-            .total-row .amount { font-size: 1rem; font-weight: 600; color: #334155; }
-            .total-row.final .amount { font-size: 1.5rem; font-weight: 800; color: #0f172a; }
-            .ticket-footer { text-align: center; padding: 32px 40px; background: #0f172a; color: #fff; }
-            .ticket-footer p { font-size: 0.9rem; margin-bottom: 8px; opacity: 0.9; }
-            .ticket-footer .doc-info { font-size: 0.8rem; opacity: 0.6; }
-            .status-badge { display: inline-block; padding: 6px 16px; border-radius: 4px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; }
-            .status-pendiente { background: #fef9c3; color: #854d0e; }
-            .status-confirmado { background: #ecfdf5; color: #065f46; }
-            .status-en_revision { background: #fff7ed; color: #c2410c; }
-            .status-aprobado { background: #f0fdf4; color: #166534; }
-            .status-rechazado { background: #fef2f2; color: #991b1b; }
-            .status-asignado { background: #eff6ff; color: #1e40af; }
-            .status-en_camino { background: #eef2ff; color: #4338ca; }
-            .status-entregado { background: #ecfdf5; color: #065f46; }
-            .status-cancelado { background: #fef2f2; color: #b91c1c; }
-            .status-disponible { background: #f0fdfa; color: #115e59; }
-            @media print {
-              body { background: #fff; padding: 0; }
-              .ticket { box-shadow: none; border: none; }
-              .no-print { display: none !important; }
-            }
-          </style>
-        </head>
-        <body>
-          <div style="text-align:center;margin-bottom:24px;" class="no-print">
-            <button onclick="window.print()" style="padding:14px 40px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:1.1rem;letter-spacing:0.5px;transition:background 0.2s; box-shadow: 0 4px 6px rgba(37,99,235,0.2);">
-              Imprimir Ticket
-            </button>
-          </div>
-          <div class="ticket">
-            <div class="ticket-header">
-              <div class="company-info">
-                <div class="brand">RematesPaisa</div>
-                <div class="details">
-                  NIT: 900.123.456-7<br/>
-                  Calle Falsa 123, Medellín, Colombia<br/>
-                  Tel: +57 (4) 123 4567<br/>
-                  soporte@rematespaisa.com
-                </div>
-              </div>
-              <div class="invoice-details">
-                <div class="title">Ticket de Compra</div>
-                <div class="order-id">Nº ${String(pedido.id_pedido).padStart(6, '0')}</div>
-                <div class="status-badge status-${(pedido.estado || ORDER_STATUS.PENDIENTE).toLowerCase()}">
-                  ${STATUS_LABELS[pedido.estado] || pedido.estado || ORDER_STATUS.PENDIENTE}
-                </div>
-              </div>
-            </div>
-            <div class="ticket-body">
-              <div class="info-grid">
-                <div class="info-box">
-                  <h3>Datos del Cliente</h3>
-                  <p>${pedido.usuario_nombre || 'N/A'}</p>
-                  <p class="light">Documento: ${pedido.numero_documento || 'N/A'}</p>
-                  ${pedido.direccion ? `<p class="light">Dirección: ${pedido.direccion}</p>` : ''}
-                </div>
-                <div class="info-box">
-                  <h3>Detalles de Emisión</h3>
-                  <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                    <span class="light">Fecha:</span>
-                    <span>${new Date(pedido.fecha).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                  </div>
-                  <div style="display:flex; justify-content:space-between;">
-                    <span class="light">Moneda:</span>
-                    <span>COP (Pesos Colombianos)</span>
-                  </div>
-                </div>
-              </div>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Descripción</th>
-                    <th>Cant.</th>
-                    <th>Precio Unit.</th>
-                    <th>Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${filasProductos}
-                </tbody>
-              </table>
-              <div class="total-section">
-                <div class="total-box">
-                  <div class="total-row">
-                    <span class="label">Subtotal</span>
-                    <span class="amount">$${Number(pedido.total).toLocaleString()}</span>
-                  </div>
-                  <div class="total-row">
-                    <span class="label">Impuestos (IVA 0%)</span>
-                    <span class="amount">$0</span>
-                  </div>
-                  <div class="total-row final">
-                    <span class="label">Total a Pagar</span>
-                    <span class="amount">$${Number(pedido.total).toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="ticket-footer">
-              <p>Gracias por tu compra en RematesPaisa. ¡Vuelve pronto!</p>
-              <div class="doc-info">
-                Documento generado el ${new Date().toLocaleString('es-CO')}
-              </div>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-
-      const ventanaTicket = window.open('', '_blank', 'width=600,height=800');
-      if (ventanaTicket) {
-        ventanaTicket.document.write(ticketHTML);
-        ventanaTicket.document.close();
-      } else {
+      const res = await api.get(`${URL_API}/${pedidoId}/ticket?format=html`, { responseType: 'text' });
+      const blob = new Blob([res.data], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const ventanaTicket = window.open(url, '_blank', 'width=700,height=900');
+      if (!ventanaTicket) {
         setDialog({ open: true, type: 'validation', title: 'Permiso requerido', message: 'Por favor permite ventanas emergentes para descargar el ticket.', onConfirm: null });
       }
-
     } catch (err) {
       console.error("Error al generar ticket:", err);
-      setDialog({ open: true, type: 'error', title: 'Error', message: "No se pudo generar el ticket de compra. " + (err.response?.data?.message || err.message), onConfirm: null });
+      setDialog({ open: true, type: 'error', title: 'Error', message: "No se pudo generar el ticket de compra.", onConfirm: null });
     }
   };
 

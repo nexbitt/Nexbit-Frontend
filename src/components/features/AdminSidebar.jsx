@@ -17,7 +17,7 @@ import {
   UsersRound, Building2, Bike, Shield,
   UserCog, LogOut, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
-import { useSocket } from '../context/SocketContext';
+import { useSocket } from '../../context/SocketContext';
 
 // ── Definición de grupos y rutas del sidebar ─────────────────────────────────
 //

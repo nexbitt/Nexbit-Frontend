@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, CheckCircle, Package } from 'lucide-react';
 import api from '../../../api';
-import CustomDialog from '../../../components/CustomDialog';
+import CustomDialog from '../../../components/ui/CustomDialog';
 
 const ModalDetallePedido = ({ pedido, tipo, alCerrar, alActualizar }) => {
   const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });

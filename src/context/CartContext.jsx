@@ -6,7 +6,7 @@
 import { createContext, useState, useContext, useEffect } from 'react';
 import api from '../api';
 import { useAuth } from './AuthContext';
-import CustomDialog from '../components/CustomDialog';
+import CustomDialog from '../components/ui/CustomDialog';
 
 const CartContext = createContext();
 export const useCart = () => useContext(CartContext);

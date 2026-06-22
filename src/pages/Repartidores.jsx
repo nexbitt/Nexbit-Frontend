@@ -3,7 +3,7 @@ import api from '../api';
 import { MapPin, Eye, Trash2, Plus, Package, ChevronDown, CheckCircle, XCircle, Clock, ArrowLeft, Search, X, Filter } from 'lucide-react';
 import { useModalScroll } from '../hooks/useModalScroll';
 import { ORDER_STATUS, STATUS_LABELS } from '../constants/orderStatuses';
-import CustomDialog from '../components/CustomDialog';
+import CustomDialog from '../components/ui/CustomDialog';
 
 const URL_API = "/api/repartidores";
 

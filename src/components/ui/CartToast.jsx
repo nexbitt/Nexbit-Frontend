@@ -4,7 +4,7 @@
  * Se auto-descarta tras 3.5 segundos y tiene botón "Ver carrito".
  */
 import { useEffect, useState } from 'react';
-import { useCart } from '../context/CartContext';
+import { useCart } from '../../context/CartContext';
 import { ShoppingCart, X, Check, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 

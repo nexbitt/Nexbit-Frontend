@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import api from '../../api';
 import { UserCircle, Save, Bell, Moon, Shield } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import ToggleRow from '../../components/ToggleRow';
+import ToggleRow from '../../components/ui/ToggleRow';
 
 const PerfilRepartidor = () => {
   const { user } = useAuth();

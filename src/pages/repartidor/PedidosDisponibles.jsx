@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import api from '../../api';
 import { Package, MapPin, DollarSign, Clock, ChevronDown, ChevronUp, Zap, Loader, AlertTriangle, User, X, MessageSquare } from 'lucide-react';
-import ChatModal from '../../components/ChatModal';
-import CustomDialog from '../../components/CustomDialog';
+import ChatModal from '../../components/features/ChatModal';
+import CustomDialog from '../../components/ui/CustomDialog';
 
 const PedidosDisponibles = () => {
   const [disponibles, setDisponibles] = useState([]);

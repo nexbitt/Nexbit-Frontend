@@ -4,8 +4,8 @@ import api from '../../api';
 import { connectRepartidorSocket, disconnectSocket } from '../../socket';
 import { Bike, MapPin, Phone, AlertTriangle, CheckCircle, XCircle, PackageSearch, MessageSquare } from 'lucide-react';
 import { ORDER_STATUS, FSM_STATUS } from '../../constants/orderStatuses';
-import ChatModal from '../../components/ChatModal';
-import CustomDialog from '../../components/CustomDialog';
+import ChatModal from '../../components/features/ChatModal';
+import CustomDialog from '../../components/ui/CustomDialog';
 
 const PedidoActivo = () => {
   const [pedido, setPedido] = useState(null);

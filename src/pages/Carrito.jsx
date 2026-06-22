@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { Package, ShieldCheck, Lock, CreditCard, ChevronRight } from 'lucide-react';
-import CustomDialog from '../components/CustomDialog';
+import CustomDialog from '../components/ui/CustomDialog';
 
 const Carrito = ({ variant }) => {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart, checkout } = useCart();

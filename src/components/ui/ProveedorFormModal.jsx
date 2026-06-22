@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Building2, IdCard, Mail, Phone, MapPin, Loader2 } from 'lucide-react';
-import api from '../api';
-import { useModalScroll } from '../hooks/useModalScroll';
+import api from '../../api';
+import { useModalScroll } from '../../hooks/useModalScroll';
 import CustomDialog from './CustomDialog';
 
 const INPUT_STYLE = {

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 import { Pencil, Trash2, Tags, Search, X, Plus } from 'lucide-react';
-import CustomDialog from '../components/CustomDialog';
-import CategoriaFormModal from '../components/CategoriaFormModal';
+import CustomDialog from '../components/ui/CustomDialog';
+import CategoriaFormModal from '../components/ui/CategoriaFormModal';
 
 const URL_API = "/api/categorias";
 

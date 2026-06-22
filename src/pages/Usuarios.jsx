@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import api from '../api';
 import { Pencil, Trash2, Users, Search, X, Filter, Plus } from 'lucide-react';
 import { useModalScroll } from '../hooks/useModalScroll';
-import CustomDialog from '../components/CustomDialog';
-import UsuarioFormModal from '../components/UsuarioFormModal';
+import CustomDialog from '../components/ui/CustomDialog';
+import UsuarioFormModal from '../components/ui/UsuarioFormModal';
 
 const URL_API = "/api/usuarios";
 

@@ -7,8 +7,8 @@ import {
   CheckCircle, Mail, Phone, MapPin, FileDigit
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import ToggleRow from '../components/ToggleRow';
-import CustomDialog from '../components/CustomDialog';
+import ToggleRow from '../components/ui/ToggleRow';
+import CustomDialog from '../components/ui/CustomDialog';
 import { useModalScroll } from '../hooks/useModalScroll';
 
 const URL_API = "/api/pedidos";

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api';
-import CustomDialog from '../components/CustomDialog';
+import CustomDialog from '../components/ui/CustomDialog';
 import { Pencil, Trash2, Package, ShoppingCart, Info, Upload, X, Search, AlertCircle, Filter, Plus, Tags } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useModalScroll } from '../hooks/useModalScroll';

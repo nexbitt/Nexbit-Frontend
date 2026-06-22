@@ -229,12 +229,10 @@ const ReportCard = ({ icon: Icon, title, desc, accentColor, kpis, onClick, loadi
 //  MODALES DE DETALLE — uno por reporte
 // ══════════════════════════════════════════════════════════════════════════════
 
-const VentasModal = ({ open, onClose, data }) => {
-  const totalFacturas = data.length;
-  const totalIngresos = data.reduce((s, r) => s + Number(r.Total_Factura || 0), 0);
-  const porProducto = Object.entries(
-    data.reduce((acc, r) => { acc[r.Producto] = (acc[r.Producto] || 0) + Number(r.Cant || 0); return acc; }, {})
-  ).sort((a, b) => b[1] - a[1]).slice(0, 6);
+const VentasModal = ({ open, onClose, data, kpis }) => {
+  const totalFacturas = kpis?.total_tickets || data.length;
+  const totalIngresos = kpis?.total_ingresos || 0;
+  const porProducto = (kpis?.top_productos || []).map(p => [p.producto, p.total_uds]);
   const maxCant = Math.max(...porProducto.map(([, v]) => v), 1);
 
   const cols = [
@@ -275,14 +273,14 @@ const VentasModal = ({ open, onClose, data }) => {
   );
 };
 
-const InventarioModal = ({ open, onClose, data }) => {
-  const agotados  = data.filter(r => r.Alerta_Stock === 'AGOTADO').length;
-  const bajos     = data.filter(r => r.Alerta_Stock === 'STOCK BAJO').length;
-  const ok        = data.filter(r => r.Alerta_Stock === 'OK').length;
-  const valorTotal = data.reduce((s, r) => s + Number(r.Valor_Inventario_Costo || 0), 0);
-  const ganPotencial = data.reduce((s, r) => s + Number(r.Ganancia_Potencial || 0), 0);
+const InventarioModal = ({ open, onClose, data, kpis }) => {
+  const agotados  = kpis?.agotados || 0;
+  const bajos     = kpis?.stock_bajo || 0;
+  const ok        = kpis?.ok || 0;
+  const valorTotal = kpis?.valor_total_costo || 0;
+  const ganPotencial = kpis?.ganancia_potencial || 0;
 
-  const topMargen = [...data].sort((a, b) => Number(b.Margen_Pct) - Number(a.Margen_Pct)).slice(0, 6);
+  const topMargen = (kpis?.top_margen || []).map(r => ({ Producto: r.producto, Margen_Pct: r.margen_pct }));
   const maxMargen = Math.max(...topMargen.map(r => Number(r.Margen_Pct)), 1);
 
   const cols = [
@@ -324,10 +322,10 @@ const InventarioModal = ({ open, onClose, data }) => {
   );
 };
 
-const SeguridadModal = ({ open, onClose, data }) => {
-  const activos  = data.filter(r => r.Estado_Cuenta === 'ACTIVO').length;
-  const inactivos = data.filter(r => r.Estado_Cuenta === 'INACTIVO').length;
-  const porRol   = Object.entries(data.reduce((acc, r) => { acc[r.Rol] = (acc[r.Rol] || 0) + 1; return acc; }, {})).sort((a, b) => b[1] - a[1]);
+const SeguridadModal = ({ open, onClose, data, kpis }) => {
+  const activos  = kpis?.activos || 0;
+  const inactivos = kpis?.inactivos || 0;
+  const porRol   = (kpis?.por_rol || []).map(r => [r.rol, r.cantidad]);
   const maxRol   = Math.max(...porRol.map(([, v]) => v), 1);
 
   const cols = [
@@ -364,9 +362,9 @@ const SeguridadModal = ({ open, onClose, data }) => {
   );
 };
 
-const CarritosModal = ({ open, onClose, data }) => {
-  const totalProyectado = data.reduce((s, r) => s + Number(r.Total_Proyectado || 0), 0);
-  const sinStock = data.filter(r => r.Disponibilidad === 'SIN STOCK' || r.Disponibilidad === 'STOCK INSUFICIENTE').length;
+const CarritosModal = ({ open, onClose, data, kpis }) => {
+  const totalProyectado = kpis?.valor_potencial || data.reduce((s, r) => s + Number(r.Total_Proyectado || 0), 0);
+  const sinStock = kpis?.con_problema_stock || data.filter(r => r.Disponibilidad === 'SIN STOCK' || r.Disponibilidad === 'STOCK INSUFICIENTE').length;
 
   const cols = [
     { key: 'Usuario', label: 'Usuario' },
@@ -389,14 +387,11 @@ const CarritosModal = ({ open, onClose, data }) => {
   );
 };
 
-const RepartidoresModal = ({ open, onClose, data }) => {
-  const aTiempo  = data.filter(r => r.Cumplimiento === 'A TIEMPO').length;
-  const tarde    = data.filter(r => r.Cumplimiento === 'TARDE').length;
-  const totalPed = data.filter(r => r.ID_Pedido).length;
-  const porRep   = Object.entries(data.reduce((acc, r) => {
-    if (r.Repartidor) { acc[r.Repartidor] = (acc[r.Repartidor] || 0) + 1; }
-    return acc;
-  }, {})).sort((a, b) => b[1] - a[1]);
+const RepartidoresModal = ({ open, onClose, data, kpis }) => {
+  const aTiempo  = kpis?.a_tiempo || 0;
+  const tarde    = kpis?.con_retraso || 0;
+  const totalPed = kpis?.total_pedidos || data.filter(r => r.ID_Pedido).length;
+  const porRep   = (kpis?.por_repartidor || []).map(r => [r.repartidor, r.cantidad]);
   const maxRep = Math.max(...porRep.map(([, v]) => v), 1);
 
   const cols = [
@@ -484,8 +479,9 @@ const REPORTES_CONFIG = [
 
 const Reportes = () => {
   const [data,    setData]    = useState({});
+  const [kpis,    setKpis]    = useState({});
   const [loading, setLoading] = useState({});
-  const [modal,   setModal]   = useState(null); // id del reporte abierto
+  const [modal,   setModal]   = useState(null);
   const [lastRefresh, setLastRefresh] = useState(null);
 
   const fetchAll = useCallback(async () => {
@@ -493,72 +489,70 @@ const Reportes = () => {
     REPORTES_CONFIG.forEach(r => { newLoading[r.id] = true; });
     setLoading(newLoading);
 
-    const results = await Promise.allSettled(
-      REPORTES_CONFIG.map(r => api.get(r.endpoint).then(res => ({ id: r.id, rows: res.data })))
-    );
+    const [dataResults, kpiResults] = await Promise.all([
+      Promise.allSettled(
+        REPORTES_CONFIG.map(r => api.get(r.endpoint).then(res => ({ id: r.id, rows: res.data })))
+      ),
+      Promise.allSettled(
+        REPORTES_CONFIG.map(r => api.get(`${r.endpoint}/kpis`).then(res => ({ id: r.id, kpis: res.data })))
+      ),
+    ]);
 
     const newData = {};
-    const newLoadingDone = {};
-    results.forEach(result => {
+    dataResults.forEach(result => {
       if (result.status === 'fulfilled') {
         newData[result.value.id] = result.value.rows;
       } else {
-        const id = REPORTES_CONFIG[results.indexOf(result)]?.id;
-        if (id) newData[id] = [];
+        const idx = dataResults.indexOf(result);
+        if (idx >= 0) newData[REPORTES_CONFIG[idx]?.id] = [];
       }
-      if (result.status === 'fulfilled') newLoadingDone[result.value.id] = false;
     });
-    REPORTES_CONFIG.forEach(r => { newLoadingDone[r.id] = false; });
+
+    const newKpis = {};
+    kpiResults.forEach(result => {
+      if (result.status === 'fulfilled') {
+        newKpis[result.value.id] = result.value.kpis;
+      }
+    });
 
     setData(newData);
-    setLoading(newLoadingDone);
+    setKpis(newKpis);
+    setLoading(Object.fromEntries(REPORTES_CONFIG.map(r => [r.id, false])));
     setLastRefresh(new Date());
   }, []);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // Calcular KPIs por reporte para las tarjetas
   const getKpis = (id) => {
-    const rows = data[id] || [];
+    const k = kpis[id];
+    if (!k) return [];
     switch (id) {
-      case 'ventas': {
-        const total = rows.reduce((s, r) => s + Number(r.Total_Factura || 0), 0);
+      case 'ventas':
         return [
-          { label: 'Tickets', value: rows.length },
-          { label: 'Ingresos', value: fmtCOP(total) },
+          { label: 'Tickets', value: k.total_tickets || 0 },
+          { label: 'Ingresos', value: fmtCOP(k.total_ingresos || 0) },
         ];
-      }
-      case 'inventario': {
-        const agotados = rows.filter(r => r.Alerta_Stock === 'AGOTADO').length;
-        const bajos    = rows.filter(r => r.Alerta_Stock === 'STOCK BAJO').length;
+      case 'inventario':
         return [
-          { label: 'Productos', value: rows.length },
-          { label: 'Agotados', value: agotados, color: agotados > 0 ? '#dc2626' : undefined },
-          { label: 'Stock bajo', value: bajos, color: bajos > 0 ? '#d97706' : undefined },
+          { label: 'Productos', value: k.total_productos || 0 },
+          { label: 'Agotados', value: k.agotados || 0, color: (k.agotados || 0) > 0 ? '#dc2626' : undefined },
+          { label: 'Stock bajo', value: k.stock_bajo || 0, color: (k.stock_bajo || 0) > 0 ? '#d97706' : undefined },
         ];
-      }
-      case 'seguridad': {
-        const activos = rows.filter(r => r.Estado_Cuenta === 'ACTIVO').length;
+      case 'seguridad':
         return [
-          { label: 'Total usuarios', value: rows.length },
-          { label: 'Activos', value: activos },
+          { label: 'Total usuarios', value: k.total_usuarios || 0 },
+          { label: 'Activos', value: k.activos || 0 },
         ];
-      }
-      case 'carritos': {
-        const proyectado = rows.reduce((s, r) => s + Number(r.Total_Proyectado || 0), 0);
+      case 'carritos':
         return [
-          { label: 'Ítems en carrito', value: rows.length },
-          { label: 'Valor potencial', value: fmtCOP(proyectado) },
+          { label: 'Ítems en carrito', value: k.total_items || 0 },
+          { label: 'Valor potencial', value: fmtCOP(k.valor_potencial || 0) },
         ];
-      }
-      case 'repartidores': {
-        const aTiempo = rows.filter(r => r.Cumplimiento === 'A TIEMPO').length;
-        const tarde   = rows.filter(r => r.Cumplimiento === 'TARDE').length;
+      case 'repartidores':
         return [
-          { label: 'A tiempo', value: aTiempo, color: '#059669' },
-          { label: 'Con retraso', value: tarde, color: tarde > 0 ? '#dc2626' : undefined },
+          { label: 'A tiempo', value: k.a_tiempo || 0, color: '#059669' },
+          { label: 'Con retraso', value: k.con_retraso || 0, color: (k.con_retraso || 0) > 0 ? '#dc2626' : undefined },
         ];
-      }
       default: return [];
     }
   };
@@ -609,26 +603,31 @@ const Reportes = () => {
         open={modal === 'ventas'}
         onClose={() => setModal(null)}
         data={data.ventas || []}
+        kpis={kpis.ventas}
       />
       <InventarioModal
         open={modal === 'inventario'}
         onClose={() => setModal(null)}
         data={data.inventario || []}
+        kpis={kpis.inventario}
       />
       <SeguridadModal
         open={modal === 'seguridad'}
         onClose={() => setModal(null)}
         data={data.seguridad || []}
+        kpis={kpis.seguridad}
       />
       <CarritosModal
         open={modal === 'carritos'}
         onClose={() => setModal(null)}
         data={data.carritos || []}
+        kpis={kpis.carritos}
       />
       <RepartidoresModal
         open={modal === 'repartidores'}
         onClose={() => setModal(null)}
         data={data.repartidores || []}
+        kpis={kpis.repartidores}
       />
     </div>
   );

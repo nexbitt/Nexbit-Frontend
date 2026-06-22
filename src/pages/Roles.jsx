@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 import { Pencil, ShieldCheck, Plus, Search, X } from 'lucide-react';
-import CustomDialog from '../components/CustomDialog';
-import RolFormModal from '../components/RolFormModal';
+import CustomDialog from '../components/ui/CustomDialog';
+import RolFormModal from '../components/ui/RolFormModal';
 
 const URL_API = "/api/roles";
 
