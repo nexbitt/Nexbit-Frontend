@@ -55,7 +55,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { LanguageProvider } from './context/LanguageContext';
 import AdminToast from './components/AdminToast';
 import SimulationToolbar from './components/SimulationToolbar';
-import ClienteSimulationView from './components/ClienteSimulationView';
 import RepartidorSimulationView from './components/RepartidorSimulationView';
 import { SimulationProvider, useSimulation } from './context/SimulationContext';
 import './services/authService';
@@ -81,9 +80,7 @@ const AdminLayout = () => {
       <main className={`adm-content${collapsed ? ' adm-content--expanded' : ''}`}>
         <SimulationToolbar />
         <div className="admin-container">
-          {activeMode === 'cliente' ? (
-            <ClienteSimulationView />
-          ) : activeMode === 'repartidor' ? (
+          {activeMode === 'repartidor' ? (
             <RepartidorSimulationView />
           ) : (
             <Outlet />

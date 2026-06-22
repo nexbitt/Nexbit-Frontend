@@ -4,9 +4,8 @@ const SimulationContext = createContext();
 export const useSimulation = () => useContext(SimulationContext);
 
 export const SimulationProvider = ({ children }) => {
-  const [activeMode, setActiveMode] = useState(null); // 'cliente' | 'repartidor' | null
+  const [activeMode, setActiveMode] = useState(null); // 'repartidor' | null
 
-  const enterClientMode = useCallback(() => setActiveMode('cliente'), []);
   const enterRepartidorMode = useCallback(() => setActiveMode('repartidor'), []);
   const exitSimulation = useCallback(() => setActiveMode(null), []);
 
@@ -16,7 +15,6 @@ export const SimulationProvider = ({ children }) => {
     <SimulationContext.Provider value={{
       activeMode,
       isSimulating,
-      enterClientMode,
       enterRepartidorMode,
       exitSimulation
     }}>

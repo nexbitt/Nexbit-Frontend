@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { Pencil, Trash2, Tags } from 'lucide-react';
-import SearchBar from '../components/SearchBar';
+import { Pencil, Trash2, Tags, Search, X, Plus } from 'lucide-react';
 import CustomDialog from '../components/CustomDialog';
 import CategoriaFormModal from '../components/CategoriaFormModal';
 
@@ -58,13 +57,15 @@ const Categorias = () => {
 
   return (
     <>
-      <div className="top-action-bar">
-        <button className="btn-add-record" onClick={abrirRegistro}>Añadir Categoría</button>
-        <SearchBar
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder="Buscar por nombre o descripción..."
-        />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', height: '42px', padding: '0 12px', boxSizing: 'border-box' }}>
+          <Search size={16} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar por nombre o descripción..." style={{ border: 'none', outline: 'none', flex: 1, padding: '0 8px', background: 'transparent', height: '100%', fontSize: '13px', color: '#111827', width: '100%' }} />
+          {searchTerm && <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex' }}><X size={14} color="#9CA3AF" /></button>}
+        </div>
+        <button onClick={abrirRegistro} style={{ height: '42px', padding: '0 24px', borderRadius: '9999px', border: 'none', background: '#111827', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
+          <Plus size={16} /> Añadir Categoría
+        </button>
       </div>
 
       <div className="table-wrapper">

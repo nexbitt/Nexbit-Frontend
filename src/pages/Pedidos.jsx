@@ -5,13 +5,12 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import api from '../api';
-import { Pencil, Trash2, ShoppingCart, Download, Eye, X, Package, AlertTriangle, Upload, CheckCircle, XCircle, AlertCircle, FileImage, MessageSquare } from 'lucide-react';
+import { Pencil, Trash2, ShoppingCart, Download, Eye, X, Package, AlertTriangle, Upload, CheckCircle, XCircle, AlertCircle, FileImage, MessageSquare, Search, Filter, Calendar, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useModalScroll } from '../hooks/useModalScroll';
 import ChatModal from '../components/ChatModal';
 import CustomDialog from '../components/CustomDialog';
 import AdminCheckoutModal from '../components/AdminCheckoutModal';
-import SearchBar from '../components/SearchBar';
 import { ORDER_STATUS, FSM_STATUS, STATUS_LABELS, STATUS_COLORS, TICKET_STATUS_COLORS, ALL_STATUSES } from '../constants/orderStatuses';
 import { useSocket } from '../context/SocketContext';
 
@@ -66,7 +65,7 @@ const Pedidos = ({ variant }) => {
   // Búsqueda y filtros (admin)
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstado, setFilterEstado] = useState("ALL");
-  const [filterStatus, setFilterStatus] = useState("ALL");
+  const [filterFecha, setFilterFecha] = useState("ALL");
   const [alertaModal, setAlertaModal] = useState(null);
 
   // Campos del formulario
@@ -75,10 +74,19 @@ const Pedidos = ({ variant }) => {
   const [total, setTotal] = useState(0);
   const [estado, setEstado] = useState(ORDER_STATUS.PENDIENTE);
 
-  const listar = () => {
+  const listar = (overrides = {}) => {
     setLoading(true);
     const url = isAdminView ? `${URL_ADMIN}/pedidos` : URL_API;
-    api.get(url)
+    const params = {};
+    if (isAdminView) {
+      const s = overrides.search ?? searchTerm;
+      const e = overrides.estado ?? filterEstado;
+      const f = overrides.filterFecha ?? filterFecha;
+      if (s) params.search = s;
+      if (e !== 'ALL') params.estado = e;
+      if (f !== 'ALL') params.filterFecha = f;
+    }
+    api.get(url, { params })
       .then(res => setPedidos(res.data))
       .catch(err => console.error("Error al listar pedidos:", err))
       .finally(() => setLoading(false));
@@ -299,11 +307,18 @@ const Pedidos = ({ variant }) => {
 
   const { lastEvent, fetchPendingReviewCount } = useSocket();
   const prevEventRef = useRef(null);
+  const isFirstFilter = useRef(true);
 
   useEffect(() => {
     listar();
     listarUsuarios();
   }, [isAdminView]);
+
+  useEffect(() => {
+    if (!isAdminView || isFirstFilter.current) { isFirstFilter.current = false; return; }
+    const timer = setTimeout(() => listar(), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm, filterEstado, filterFecha]);
 
   useEffect(() => {
     if (!lastEvent?.current) return;
@@ -491,27 +506,17 @@ const Pedidos = ({ variant }) => {
     }
   };
 
-  // ── Filtrado y paginación ──
-  const filteredPedidos = pedidos.filter(p => {
+  // ── Filtrado (solo cliente local; admin usa backend) ──
+  const displayItems = pedidos.filter(p => {
     if (!isAdminView) {
       const userStr = localStorage.getItem('user');
       const user = userStr ? JSON.parse(userStr) : null;
       if (!user || p.usuario_id !== user.id_usuario) return false;
     }
-
-    // Filtros admin
-    if (isAdminView && filterEstado !== 'ALL' && p.estado !== filterEstado) return false;
-    if (isAdminView && filterStatus === 'DELETED' && p.status_pedido !== 'eliminado_usuario') return false;
-    if (isAdminView && filterStatus === 'ACTIVE' && p.status_pedido === 'eliminado_usuario') return false;
-
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    const cliente = p.usuario_nombre || p.usuario?.nombre || '';
-    return (String(p.id_pedido).includes(term))
-        || (cliente.toLowerCase().includes(term));
+    return true;
   });
 
-  const displayItems = filteredPedidos;
+  const hasActiveFilters = !!(searchTerm || filterEstado !== 'ALL' || filterFecha !== 'ALL');
 
   // ── Vista: Invitado ──
   if (isGuestView) {
@@ -831,26 +836,31 @@ const Pedidos = ({ variant }) => {
   // ── Vista: Admin ──
   return (
     <>
-      <div className="top-action-bar">
-        <button className="btn-add-record" onClick={abrirRegistro}>Añadir Pedido</button>
-        <SearchBar
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder="Buscar por ID o cliente..."
-          filters={[
-            { key: 'estado', label: 'Todos los estados', options: ALL_STATUSES.map(s => ({ value: s, label: STATUS_LABELS[s] || s })) },
-            { key: 'status', label: 'Todos los tipos', options: [
-              { value: 'ACTIVE', label: 'Activos' },
-              { value: 'DELETED', label: 'Eliminados' }
-            ]}
-          ]}
-          filterValues={{ estado: filterEstado, status: filterStatus }}
-          onFilterChange={(key, val) => {
-            if (key === 'estado') setFilterEstado(val);
-            if (key === 'status') setFilterStatus(val);
-          }}
-          onClear={() => { setSearchTerm(''); setFilterEstado('ALL'); setFilterStatus('ALL'); }}
-        />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', height: '42px', padding: '0 12px', boxSizing: 'border-box' }}>
+          <Search size={16} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar por número de pedido, cliente o documento..." style={{ border: 'none', outline: 'none', flex: 1, padding: '0 8px', background: 'transparent', height: '100%', fontSize: '13px', color: '#111827', width: '100%' }} />
+          {searchTerm && <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex' }}><X size={14} color="#9CA3AF" /></button>}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', height: '42px', padding: '0 8px 0 12px', width: '180px', flexShrink: 0, boxSizing: 'border-box' }}>
+          <Filter size={14} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} style={{ border: 'none', outline: 'none', flex: 1, padding: '0 4px', background: 'transparent', height: '100%', fontSize: '13px', color: '#111827', cursor: 'pointer' }}>
+            <option value="ALL">Todos los estados</option>
+            {ALL_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>)}
+          </select>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', height: '42px', padding: '0 8px 0 12px', width: '150px', flexShrink: 0, boxSizing: 'border-box' }}>
+          <Calendar size={14} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          <select value={filterFecha} onChange={e => setFilterFecha(e.target.value)} style={{ border: 'none', outline: 'none', flex: 1, padding: '0 4px', background: 'transparent', height: '100%', fontSize: '13px', color: '#111827', cursor: 'pointer' }}>
+            <option value="ALL">Cualquier fecha</option>
+            <option value="today">Hoy</option>
+            <option value="week">Última semana</option>
+            <option value="month">Este mes</option>
+          </select>
+        </div>
+        <button onClick={abrirRegistro} style={{ height: '42px', padding: '0 24px', borderRadius: '9999px', border: 'none', background: '#111827', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
+          <Plus size={16} /> Nuevo Pedido
+        </button>
       </div>
 
       <div className="table-wrapper">
@@ -859,11 +869,20 @@ const Pedidos = ({ variant }) => {
             <div className="spinner"></div>
             <p style={{ marginTop: '1rem' }}>Cargando datos...</p>
           </div>
-        ) : pedidos.length === 0 ? (
+        ) : pedidos.length === 0 && !hasActiveFilters ? (
           <div style={{ padding: '5rem 2rem', textAlign: 'center', color: '#94a3b8' }}>
             <ShoppingCart size={64} style={{ color: 'var(--primary)', opacity: 0.5, marginBottom: '1.5rem' }} />
             <h2>No hay pedidos registrados</h2>
-            <p>Haz clic en "Añadir Pedido" para comenzar.</p>
+            <p>Haz clic en "Nuevo Pedido" para comenzar.</p>
+          </div>
+        ) : displayItems.length === 0 ? (
+          <div style={{ padding: '5rem 2rem', textAlign: 'center', color: '#94a3b8', background: '#F9FAFB', borderRadius: '12px' }}>
+            <AlertCircle size={48} style={{ opacity: 0.4, marginBottom: '1rem', color: '#9CA3AF' }} />
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#6B7280', margin: '0 0 0.5rem' }}>No se encontraron pedidos</h2>
+            <p style={{ fontSize: '0.9rem', color: '#9CA3AF' }}>No hay pedidos que coincidan con los filtros aplicados.</p>
+            <button onClick={() => { setSearchTerm(''); setFilterEstado('ALL'); setFilterFecha('ALL'); }} style={{ marginTop: '16px', padding: '8px 20px', borderRadius: '8px', border: '1px solid #D1D5DB', background: '#fff', color: '#374151', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}>
+              Limpiar filtros
+            </button>
           </div>
         ) : (
           <table className="styled-table">
@@ -1106,6 +1125,23 @@ const Pedidos = ({ variant }) => {
                   </div>
                 )}
 
+                {/* ── Comprobante inline preview ── */}
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', fontWeight: 700, marginBottom: 8 }}>
+                    Comprobante de Pago
+                  </div>
+                  <div style={{ width: 120, height: 120, background: '#F3F4F6', borderRadius: 8, border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: pedidoDetalle.comprobante_pago_url ? 'pointer' : 'default', overflow: 'hidden' }} onClick={() => pedidoDetalle.comprobante_pago_url && setShowPaymentReview(true)}>
+                    {pedidoDetalle.comprobante_pago_url ? (
+                      <img src={pedidoDetalle.comprobante_pago_url} alt="Comprobante" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <FileImage size={32} color="#9CA3AF" />
+                    )}
+                  </div>
+                  {!pedidoDetalle.comprobante_pago_url && (
+                    <div style={{ fontSize: '0.75rem', color: '#9CA3AF', marginTop: 4 }}>Sin comprobante</div>
+                  )}
+                </div>
+
                 {/* ── Revisión de Pago (visible tras Ver Comprobante) ── */}
                 {showPaymentReview && (
                   <div style={{ marginBottom: 24, background: '#f8fafc', borderRadius: 12, padding: 20, border: '2px solid #e2e8f0' }}>
@@ -1134,8 +1170,8 @@ const Pedidos = ({ variant }) => {
                         </p>
                       </div>
                     ) : (
-                      <div style={{ padding: '24px', textAlign: 'center', background: '#fff', borderRadius: 8, border: '1px dashed var(--border)', color: '#94a3b8', marginBottom: 16 }}>
-                        <AlertCircle size={32} style={{ marginBottom: 8 }} />
+                      <div style={{ padding: '24px', textAlign: 'center', background: '#F3F4F6', borderRadius: 8, border: '1px dashed #D1D5DB', color: '#9CA3AF', marginBottom: 16 }}>
+                        <FileImage size={32} style={{ marginBottom: 8 }} />
                         <p style={{ fontWeight: 600, marginBottom: 4 }}>Sin comprobante de pago</p>
                         <p style={{ fontSize: '0.85rem' }}>El cliente aún no ha subido un comprobante para este pedido.</p>
                       </div>

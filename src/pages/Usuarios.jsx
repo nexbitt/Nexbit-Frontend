@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { Pencil, Trash2, Users } from 'lucide-react';
+import { Pencil, Trash2, Users, Search, X, Filter, Plus } from 'lucide-react';
 import { useModalScroll } from '../hooks/useModalScroll';
-import SearchBar from '../components/SearchBar';
 import CustomDialog from '../components/CustomDialog';
 import UsuarioFormModal from '../components/UsuarioFormModal';
 
@@ -76,42 +75,32 @@ const Usuarios = () => {
 
   const displayItems = filteredUsuarios;
 
-  const handleFilterChange = (key, value) => {
-    if (key === 'rol') setFilterRol(value);
-    if (key === 'estado') setFilterEstado(value);
-  };
-
-  const clearFilters = () => {
-    setSearchTerm('');
-    setFilterRol('ALL');
-    setFilterEstado('ALL');
-  };
-
-  const filterValues = { rol: filterRol, estado: filterEstado };
-
   return (
     <>
-      <div className="top-action-bar">
-        <button className="btn-add-record" onClick={abrirRegistro}>Añadir Usuario</button>
-        <SearchBar
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder="Buscar por nombre, email o documento..."
-          filters={[
-            {
-              key: 'rol',
-              label: 'Todos los roles',
-              options: rolesList.map(r => ({ value: String(r.id_rol), label: r.nombre }))
-            },
-            { key: 'estado', label: 'Todos los estados', options: [
-              { value: 'ACTIVE', label: 'Activos' },
-              { value: 'INACTIVE', label: 'Inactivos' }
-            ]}
-          ]}
-          filterValues={filterValues}
-          onFilterChange={handleFilterChange}
-          onClear={clearFilters}
-        />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', height: '42px', padding: '0 12px', boxSizing: 'border-box' }}>
+          <Search size={16} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar por nombre, email o documento..." style={{ border: 'none', outline: 'none', flex: 1, padding: '0 8px', background: 'transparent', height: '100%', fontSize: '13px', color: '#111827', width: '100%' }} />
+          {searchTerm && <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex' }}><X size={14} color="#9CA3AF" /></button>}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', height: '42px', padding: '0 8px 0 12px', width: '180px', flexShrink: 0, boxSizing: 'border-box' }}>
+          <Users size={14} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          <select value={filterRol} onChange={e => setFilterRol(e.target.value)} style={{ border: 'none', outline: 'none', flex: 1, padding: '0 4px', background: 'transparent', height: '100%', fontSize: '13px', color: '#111827', cursor: 'pointer' }}>
+            <option value="ALL">Todos los roles</option>
+            {rolesList.map(r => <option key={r.id_rol} value={String(r.id_rol)}>{r.nombre}</option>)}
+          </select>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', height: '42px', padding: '0 8px 0 12px', width: '150px', flexShrink: 0, boxSizing: 'border-box' }}>
+          <Filter size={14} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} style={{ border: 'none', outline: 'none', flex: 1, padding: '0 4px', background: 'transparent', height: '100%', fontSize: '13px', color: '#111827', cursor: 'pointer' }}>
+            <option value="ALL">Todos los estados</option>
+            <option value="ACTIVE">Activos</option>
+            <option value="INACTIVE">Inactivos</option>
+          </select>
+        </div>
+        <button onClick={abrirRegistro} style={{ height: '42px', padding: '0 24px', borderRadius: '9999px', border: 'none', background: '#111827', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
+          <Plus size={16} /> Añadir Usuario
+        </button>
       </div>
 
       <div className="table-wrapper">
