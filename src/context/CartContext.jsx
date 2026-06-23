@@ -6,6 +6,7 @@
 import { createContext, useState, useContext, useEffect } from 'react';
 import api from '../api';
 import { useAuth } from './AuthContext';
+import CustomDialog from '../components/ui/CustomDialog';
 
 const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
@@ -25,6 +26,7 @@ const URL_CARRITO = '/api/carrito';
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [toast, setToast]         = useState(null); // { product, quantity }
+  const [loginAlert, setLoginAlert] = useState(false);
   const { user, isAuthenticated } = useAuth();
 
   const sessionId  = generateSessionId();
@@ -64,7 +66,7 @@ export const CartProvider = ({ children }) => {
   /* ── Agregar al carrito + notificación ───────────────────── */
   const addToCart = async (product, quantity = 1) => {
     if (!isAuthenticated || !usuario_id) {
-      alert('Debes iniciar sesión para agregar productos al carrito.');
+      setLoginAlert(true);
       return;
     }
     try {
@@ -161,6 +163,13 @@ export const CartProvider = ({ children }) => {
       clearToast,
     }}>
       {children}
+      <CustomDialog
+        type="validation"
+        open={loginAlert}
+        onClose={() => setLoginAlert(false)}
+        title="Inicio de sesión requerido"
+        message="Debes iniciar sesión para agregar productos al carrito."
+      />
     </CartContext.Provider>
   );
 };

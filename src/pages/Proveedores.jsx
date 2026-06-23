@@ -1,55 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../api';
-import { Pencil, Trash2, Truck, AlertCircle } from 'lucide-react';
-import { useModalScroll } from '../hooks/useModalScroll';
-import SearchBar from '../components/SearchBar';
+import { Pencil, Trash2, Truck, Search, X, Plus } from 'lucide-react';
+import CustomDialog from '../components/ui/CustomDialog';
+import ProveedorFormModal from '../components/ui/ProveedorFormModal';
 
 const URL_API = "/api/proveedores";
 
 const Proveedores = () => {
   const [proveedores, setProveedores] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [enEdicion, setEnEdicion] = useState(false);
+  const [selectedProveedor, setSelectedProveedor] = useState(null);
   const [loading, setLoading] = useState(true);
-  useModalScroll(showModal);
-
-  // Búsqueda
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
   const [searchTerm, setSearchTerm] = useState("");
-  // Campos de la BD
-  const [idProveedor, setIdProveedor] = useState(null);
-  const [nit, setNit] = useState("");
-  const [nombre, setNombre] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [correo, setCorreo] = useState("");
-  const [direccion, setDireccion] = useState("");
-  const [activo, setActivo] = useState(1);
-
-  // Validación de campo individual
-  const [fieldErrors, setFieldErrors] = useState({});
-
-  const NAME_REGEX = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/;
-  const NIT_REGEX = /^[0-9.\-]+$/;
-
-  const handleKeyDown = (e, regex) => {
-    if (e.key.length === 1 && !regex.test(e.key)) {
-      e.preventDefault();
-    }
-  };
-
-  const handlePaste = (e, regex) => {
-    const pasted = (e.clipboardData || window.clipboardData).getData('text');
-    if (!regex.test(pasted)) {
-      e.preventDefault();
-    }
-  };
-
-  const validateField = (field, value) => {
-    let error = '';
-    if (field === 'nombre' && value.trim().length > 0 && !NAME_REGEX.test(value)) { error = 'Solo letras y espacios'; }
-    if (field === 'nit' && value.length > 0 && !NIT_REGEX.test(value)) { error = 'Solo números, puntos y guiones'; }
-    setFieldErrors(prev => ({ ...prev, [field]: error }));
-    return error;
-  };
 
   const listar = () => {
     setLoading(true);
@@ -59,83 +22,28 @@ const Proveedores = () => {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    listar();
-  }, []);
-
-  const limpiarFormulario = () => {
-    setNit(""); setNombre(""); setTelefono(""); 
-    setCorreo(""); setDireccion(""); setActivo(1);
-    setEnEdicion(false); setIdProveedor(null);
-    setFieldErrors({});
-    setShowModal(false);
-  };
+  useEffect(() => { listar(); }, []);
 
   const abrirRegistro = () => {
-    limpiarFormulario();
-    const nextId = proveedores.length > 0 ? Math.max(...proveedores.map(p => p.id_proveedor)) + 1 : 1;
-    setIdProveedor(nextId);
+    setSelectedProveedor(null);
     setShowModal(true);
   };
 
   const seleccionarProveedor = (p) => {
-    setIdProveedor(p.id_proveedor);
-    setNit(p.nit);
-    setNombre(p.nombre);
-    setTelefono(p.telefono || "");
-    setCorreo(p.correo || "");
-    setDireccion(p.direccion || "");
-    setActivo(p.activo);
-    setEnEdicion(true);
+    setSelectedProveedor(p);
     setShowModal(true);
   };
 
-  const guardar = () => {
-    const datos = { nit, nombre, telefono, correo, direccion, activo };
-
-    const errNombre = validateField('nombre', nombre);
-    const errNit = validateField('nit', nit);
-    if (errNombre || errNit) return;
-
-    if (!nit || !nombre) {
-      alert("El NIT y el nombre son obligatorios");
-      return;
-    }
-
-    if (enEdicion) {
-      api.put(`${URL_API}/${idProveedor}`, datos)
-        .then(() => {
-          limpiarFormulario();
-          listar();
-          alert("Proveedor actualizado correctamente.");
-        })
-        .catch(err => {
-          console.error("Error interno:", err);
-          alert("Error al actualizar: " + (err.response?.data?.message || err.message));
-        });
-    } else {
-      api.post(URL_API, datos)
-        .then(() => {
-          limpiarFormulario();
-          listar();
-          alert("Proveedor creado con éxito.");
-        })
-        .catch(err => {
-          console.error("Error interno:", err);
-          alert("Error al crear: " + (err.response?.data?.message || err.message));
-        });
-    }
-  };
-
   const eliminar = (id) => {
-    if (window.confirm("¿Confirmar eliminación de este registro?")) {
+    setDialog({ open: true, type: 'confirm', title: 'Confirmar eliminación', message: '¿Confirmar eliminación de este registro?', onConfirm: () => {
+      setDialog({ open: false, type: 'confirm', title: '', message: '', onConfirm: null });
       api.delete(`${URL_API}/${id}`)
         .then(() => listar())
         .catch(err => {
           console.error("Error al eliminar:", err);
-          alert("No se puede eliminar el proveedor. Es posible que tenga productos o compras asociadas.\nDetalle: " + (err.response?.data?.error || err.message));
+          setDialog({ open: true, type: 'error', title: 'Error al eliminar', message: "No se puede eliminar el proveedor. Es posible que tenga productos o compras asociadas.\nDetalle: " + (err.response?.data?.error || err.message), onConfirm: null });
         });
-    }
+    }});
   };
 
   const filteredProveedores = proveedores.filter(p => {
@@ -150,13 +58,15 @@ const Proveedores = () => {
 
   return (
     <>
-      <div className="top-action-bar">
-        <button className="btn-add-record" onClick={abrirRegistro}>Añadir Proveedor</button>
-        <SearchBar
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder="Buscar por nombre, NIT o correo..."
-        />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', height: '42px', padding: '0 12px', boxSizing: 'border-box' }}>
+          <Search size={16} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar por nombre, NIT o correo..." style={{ border: 'none', outline: 'none', flex: 1, padding: '0 8px', background: 'transparent', height: '100%', fontSize: '13px', color: '#111827', width: '100%' }} />
+          {searchTerm && <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex' }}><X size={14} color="#9CA3AF" /></button>}
+        </div>
+        <button onClick={abrirRegistro} style={{ height: '42px', padding: '0 24px', borderRadius: '9999px', border: 'none', background: '#111827', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
+          <Plus size={16} /> Añadir Proveedor
+        </button>
       </div>
 
       <div className="table-wrapper">
@@ -218,75 +128,21 @@ const Proveedores = () => {
         </div>
       )}
 
-      {showModal && (
-        <div className="modal-backdrop">
-          <div className="modal-box">
-            <h2>{enEdicion ? "Actualizar Proveedor" : "Nuevo Registro"}</h2>
-            <div className="form-grid">
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>ID</label>
-                <input type="text" value={idProveedor || ''} disabled style={{ background: 'var(--border)', cursor: 'not-allowed' }}/>
-              </div>
-              <div className="input-field">
-                <label>NIT</label>
-                <input
-                  value={nit}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '' || /^[0-9.\-]*$/.test(val)) setNit(val);
-                  }}
-                  onBlur={() => validateField('nit', nit)}
-                  style={{ borderColor: fieldErrors.nit ? '#EF4444' : undefined, borderWidth: fieldErrors.nit ? '2px' : undefined }}
-                />
-                {fieldErrors.nit && (
-                  <span style={{ color: '#EF4444', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                    <AlertCircle size={14} /> {fieldErrors.nit}
-                  </span>
-                )}
-              </div>
-              <div className="input-field">
-                <label>Nombre o Empresa</label>
-                <input
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, NAME_REGEX)}
-                  onPaste={(e) => handlePaste(e, NAME_REGEX)}
-                  onBlur={() => validateField('nombre', nombre)}
-                  style={{ borderColor: fieldErrors.nombre ? '#EF4444' : undefined, borderWidth: fieldErrors.nombre ? '2px' : undefined }}
-                />
-                {fieldErrors.nombre && (
-                  <span style={{ color: '#EF4444', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                    <AlertCircle size={14} /> {fieldErrors.nombre}
-                  </span>
-                )}
-              </div>
-              <div className="input-field">
-                <label>Teléfono</label>
-                <input value={telefono} onChange={(e) => setTelefono(e.target.value)} />
-              </div>
-              <div className="input-field">
-                <label>Correo</label>
-                <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} />
-              </div>
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>Dirección</label>
-                <input value={direccion} onChange={(e) => setDireccion(e.target.value)} />
-              </div>
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>Estado</label>
-                <select value={activo} onChange={(e) => setActivo(Number(e.target.value))}>
-                  <option value={1}>Activo</option>
-                  <option value={0}>Inactivo</option>
-                </select>
-              </div>
-            </div>
-            <div className="modal-btns">
-              <button className="btn-cancel" onClick={limpiarFormulario}>Cancelar</button>
-              <button className="btn-save" onClick={guardar}>Guardar Cambios</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProveedorFormModal
+        open={showModal}
+        onClose={() => { setShowModal(false); setSelectedProveedor(null); }}
+        onSuccess={listar}
+        proveedor={selectedProveedor}
+      />
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
     </>
   );
 };

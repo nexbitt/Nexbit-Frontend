@@ -4,7 +4,8 @@ import api from '../../api';
 import { connectRepartidorSocket, disconnectSocket } from '../../socket';
 import { Bike, MapPin, Phone, AlertTriangle, CheckCircle, XCircle, PackageSearch, MessageSquare } from 'lucide-react';
 import { ORDER_STATUS, FSM_STATUS } from '../../constants/orderStatuses';
-import ChatModal from '../../components/ChatModal';
+import ChatModal from '../../components/features/ChatModal';
+import CustomDialog from '../../components/ui/CustomDialog';
 
 const PedidoActivo = () => {
   const [pedido, setPedido] = useState(null);
@@ -14,6 +15,7 @@ const PedidoActivo = () => {
   const [problemaModal, setProblemaModal] = useState(false);
   const [descripcionProblema, setDescripcionProblema] = useState('');
   const [showChat, setShowChat] = useState(false);
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
   const navigate = useNavigate();
 
   const cargar = useCallback(async () => {
@@ -44,7 +46,7 @@ const PedidoActivo = () => {
       await api.put(`/api/reparto/${pedido.id_pedido}/en-camino`);
       setPedido((prev) => ({ ...prev, estado_fsm: FSM_STATUS.EN_CAMINO, estado_db: ORDER_STATUS.EN_CAMINO }));
     } catch (err) {
-      alert(err.response?.data?.error || 'Error al actualizar');
+      setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.error || 'Error al actualizar', onConfirm: null });
     } finally {
       setAccion(null);
     }
@@ -57,7 +59,7 @@ const PedidoActivo = () => {
       setPedido(null);
       cargar();
     } catch (err) {
-      alert(err.response?.data?.error || 'Error al confirmar entrega');
+      setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.error || 'Error al confirmar entrega', onConfirm: null });
     } finally {
       setAccion(null);
     }
@@ -70,28 +72,30 @@ const PedidoActivo = () => {
       const res = await api.post(`/api/reparto/${pedido.id_pedido}/problema`, {
         descripcion: descripcionProblema,
       });
-      alert(res.data.message);
+      setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: res.data.message, onConfirm: null });
       setProblemaModal(false);
       setDescripcionProblema('');
     } catch (err) {
-      alert(err.response?.data?.error || 'Error al reportar');
+      setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.error || 'Error al reportar', onConfirm: null });
     } finally {
       setAccion(null);
     }
   };
 
   const cancelarPedido = async () => {
-    if (!window.confirm('¿Estás seguro de cancelar este pedido?')) return;
-    setAccion('cancelar');
-    try {
-      await api.put(`/api/reparto/${pedido.id_pedido}/cancelar`, { motivo: 'Cancelado por repartidor' });
-      setPedido(null);
-      cargar();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Error al cancelar');
-    } finally {
-      setAccion(null);
-    }
+    setDialog({ open: true, type: 'confirm', title: 'Cancelar pedido', message: '¿Estás seguro de cancelar este pedido?', onConfirm: async () => {
+      setDialog(prev => ({ ...prev, open: false }));
+      setAccion('cancelar');
+      try {
+        await api.put(`/api/reparto/${pedido.id_pedido}/cancelar`, { motivo: 'Cancelado por repartidor' });
+        setPedido(null);
+        cargar();
+      } catch (err) {
+        setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.error || 'Error al cancelar', onConfirm: null });
+      } finally {
+        setAccion(null);
+      }
+    }});
   };
 
   if (loading) {
@@ -294,6 +298,15 @@ const PedidoActivo = () => {
           onClose={() => setShowChat(false)}
         />
       )}
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
     </>
   );
 };

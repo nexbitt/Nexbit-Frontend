@@ -13,9 +13,9 @@ import {
   ShoppingBag, ClipboardList, Menu, X,
   LifeBuoy, UserCircle
 } from 'lucide-react';
-import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
-import { useLanguage } from '../context/LanguageContext';
+import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const TopBar = ({ onLogout, variant }) => {
   const { totalItems } = useCart();

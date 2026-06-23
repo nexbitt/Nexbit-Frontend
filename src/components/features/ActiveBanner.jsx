@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bike, Clock, ChevronRight } from 'lucide-react';
-import api from '../api';
-import { FSM_STATUS } from '../constants/orderStatuses';
+import api from '../../api';
+import { FSM_STATUS } from '../../constants/orderStatuses';
 
 const ActiveBanner = ({ repartidorId }) => {
   const [activo, setActivo] = useState(null);

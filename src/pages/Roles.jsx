@@ -1,22 +1,18 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { Pencil, ShieldCheck } from 'lucide-react';
-import { useModalScroll } from '../hooks/useModalScroll';
-import SearchBar from '../components/SearchBar';
+import { Pencil, ShieldCheck, Plus, Search, X } from 'lucide-react';
+import CustomDialog from '../components/ui/CustomDialog';
+import RolFormModal from '../components/ui/RolFormModal';
 
 const URL_API = "/api/roles";
 
 const Roles = () => {
   const [roles, setRoles] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [selectedRol, setSelectedRol] = useState(null);
   const [loading, setLoading] = useState(true);
-  useModalScroll(showModal);
-
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
   const [searchTerm, setSearchTerm] = useState("");
-
-  const [idRol, setIdRol] = useState(null);
-  const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
 
   const listar = () => {
     setLoading(true);
@@ -26,39 +22,16 @@ const Roles = () => {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    listar();
-  }, []);
+  useEffect(() => { listar(); }, []);
 
-  const limpiarFormulario = () => {
-    setNombre(""); setDescripcion("");
-    setIdRol(null);
-    setShowModal(false);
-  };
-
-  const seleccionarRol = (r) => {
-    setIdRol(r.id_rol);
-    setNombre(r.nombre);
-    setDescripcion(r.descripcion || "");
+  const abrirRegistro = () => {
+    setSelectedRol(null);
     setShowModal(true);
   };
 
-  const guardar = () => {
-    if (!nombre) {
-      alert("El nombre del rol es obligatorio");
-      return;
-    }
-
-    api.put(`${URL_API}/${idRol}`, { nombre, descripcion })
-      .then(() => {
-        limpiarFormulario();
-        listar();
-        alert("Rol actualizado correctamente.");
-      })
-      .catch(err => {
-        console.error("Error interno:", err);
-        alert("Error al actualizar: " + (err.response?.data?.message || err.message));
-      });
+  const seleccionarRol = (r) => {
+    setSelectedRol(r);
+    setShowModal(true);
   };
 
   const filteredRoles = roles.filter(r => {
@@ -70,12 +43,15 @@ const Roles = () => {
 
   return (
     <>
-      <div className="top-action-bar">
-        <SearchBar
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder="Buscar por nombre o descripción..."
-        />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', height: '42px', padding: '0 12px', boxSizing: 'border-box' }}>
+          <Search size={16} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar por nombre o descripción..." style={{ border: 'none', outline: 'none', flex: 1, padding: '0 8px', background: 'transparent', height: '100%', fontSize: '13px', color: '#111827', width: '100%' }} />
+          {searchTerm && <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex' }}><X size={14} color="#9CA3AF" /></button>}
+        </div>
+        <button onClick={abrirRegistro} style={{ height: '42px', padding: '0 24px', borderRadius: '9999px', border: 'none', background: '#111827', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
+          <Plus size={16} /> Añadir Rol
+        </button>
       </div>
 
       <div className="table-wrapper">
@@ -88,6 +64,7 @@ const Roles = () => {
           <div style={{ padding: '5rem 2rem', textAlign: 'center', color: '#94a3b8' }}>
             <ShieldCheck size={64} style={{ color: 'var(--primary)', opacity: 0.5, marginBottom: '1.5rem' }} />
             <h2>No hay roles registrados en el sistema</h2>
+            <p>Haz clic en "Añadir Rol" para crear el primer rol.</p>
           </div>
         ) : (
           <table className="styled-table">
@@ -117,36 +94,21 @@ const Roles = () => {
         )}
       </div>
 
-      {showModal && (
-        <div className="modal-backdrop">
-          <div className="modal-box">
-            <h2>Editar Rol</h2>
-            <div className="form-grid">
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>ID</label>
-                <input type="text" value={idRol || ''} disabled style={{ background: 'var(--border)', cursor: 'not-allowed' }}/>
-              </div>
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>Nombre del Rol</label>
-                <input value={nombre} onChange={(e) => setNombre(e.target.value)} />
-              </div>
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>Descripción</label>
-                <textarea 
-                  value={descripcion} 
-                  onChange={(e) => setDescripcion(e.target.value)} 
-                  rows={3}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                />
-              </div>
-            </div>
-            <div className="modal-btns">
-              <button className="btn-cancel" onClick={limpiarFormulario}>Cancelar</button>
-              <button className="btn-save" onClick={guardar}>Guardar Cambios</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RolFormModal
+        open={showModal}
+        onClose={() => { setShowModal(false); setSelectedRol(null); }}
+        onSuccess={listar}
+        rol={selectedRol}
+      />
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
     </>
   );
 };

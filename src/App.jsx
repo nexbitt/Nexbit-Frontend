@@ -16,9 +16,9 @@
  */
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, NavLink } from 'react-router-dom';
-import TopBar from './components/TopBar';
-import AdminSidebar from './components/AdminSidebar';
-import CartToast from './components/CartToast';
+import TopBar from './components/features/TopBar';
+import AdminSidebar from './components/features/AdminSidebar';
+import CartToast from './components/ui/CartToast';
 import { Bike, UserCog, LogOut, Package, Clock } from 'lucide-react';
 
 // Páginas
@@ -46,18 +46,15 @@ import PerfilRepartidor from './pages/repartidor/PerfilRepartidor';
 import PedidosDisponibles from './pages/repartidor/PedidosDisponibles';
 import PedidoActivo from './pages/repartidor/PedidoActivo';
 import HistorialRepartidor from './pages/repartidor/HistorialRepartidor';
-import ActiveBanner from './components/ActiveBanner';
+import ActiveBanner from './components/features/ActiveBanner';
 
 import { CartProvider } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/features/ProtectedRoute';
 import { LanguageProvider } from './context/LanguageContext';
-import AdminToast from './components/AdminToast';
-import SimulationToolbar from './components/SimulationToolbar';
-import ClienteSimulationView from './components/ClienteSimulationView';
-import RepartidorSimulationView from './components/RepartidorSimulationView';
-import { SimulationProvider, useSimulation } from './context/SimulationContext';
+import AdminToast from './components/ui/AdminToast';
+
 import './services/authService';
 
 // ─── Layout del Panel Admin ──────────────────────────────────────────────────
@@ -69,7 +66,6 @@ import './services/authService';
 const AdminLayout = () => {
   const { logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
-  const { activeMode } = useSimulation();
 
   return (
     <div className="adm-layout">
@@ -79,15 +75,8 @@ const AdminLayout = () => {
         onLogout={logout}
       />
       <main className={`adm-content${collapsed ? ' adm-content--expanded' : ''}`}>
-        <SimulationToolbar />
         <div className="admin-container">
-          {activeMode === 'cliente' ? (
-            <ClienteSimulationView />
-          ) : activeMode === 'repartidor' ? (
-            <RepartidorSimulationView />
-          ) : (
-            <Outlet />
-          )}
+          <Outlet />
         </div>
         <AdminToast />
       </main>
@@ -305,11 +294,9 @@ function App() {
       <AuthProvider>
         <SocketProvider>
           <CartProvider>
-            <SimulationProvider>
               <BrowserRouter>
                 <AppRoutes />
               </BrowserRouter>
-            </SimulationProvider>
           </CartProvider>
         </SocketProvider>
       </AuthProvider>

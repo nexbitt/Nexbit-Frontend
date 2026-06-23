@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import api from '../api';
-import { getSocketInstance, connectRepartidorSocket, connectSocket } from '../socket';
+import api from '../../api';
+import { getSocketInstance, connectRepartidorSocket, connectSocket } from '../../socket';
 import { X, Send, MessageSquare, User, Shield } from 'lucide-react';
 
 const ChatModal = ({ pedidoId, onClose }) => {

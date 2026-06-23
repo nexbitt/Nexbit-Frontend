@@ -7,10 +7,12 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { Package, ShieldCheck, Lock, CreditCard, ChevronRight } from 'lucide-react';
+import CustomDialog from '../components/ui/CustomDialog';
 
 const Carrito = ({ variant }) => {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart, checkout } = useCart();
   const navigate = useNavigate();
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
 
   // El checkout transaccional del backend requiere estar logueado. A un 'usuario' (invitado) le pedimos logearse.
   const isGuest = variant === 'usuario';
@@ -25,7 +27,7 @@ const Carrito = ({ variant }) => {
     if (result.success) {
       navigate(`/${variant}/pedidos/${result.id_pedido}/confirmar`);
     } else {
-      alert(result.error || "Ocurrió un error procesando el pedido.");
+      setDialog({ open: true, type: 'error', title: 'Error', message: result.error || "Ocurrió un error procesando el pedido.", onConfirm: null });
     }
   };
 
@@ -125,6 +127,14 @@ const Carrito = ({ variant }) => {
         </div>
       )}
 
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
     </div>
   );
 };

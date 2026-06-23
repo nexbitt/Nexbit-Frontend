@@ -7,7 +7,8 @@ import {
   CheckCircle, Mail, Phone, MapPin, FileDigit
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import ToggleRow from '../components/ToggleRow';
+import ToggleRow from '../components/ui/ToggleRow';
+import CustomDialog from '../components/ui/CustomDialog';
 import { useModalScroll } from '../hooks/useModalScroll';
 
 const URL_API = "/api/pedidos";
@@ -80,6 +81,9 @@ const Perfil = () => {
 
   // Demo modals
   const [showDemoModal, setShowDemoModal] = useState(null);
+
+  // Reusable dialog
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
 
   useModalScroll(showPasswordModal || showDemoModal);
 
@@ -223,7 +227,7 @@ const Perfil = () => {
       await api.put(`${URL_API}/${id}/restaurar`);
       setTrashOrders(prev => prev.filter(p => p.id_pedido !== id));
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al restaurar');
+      setDialog({ open: true, type: 'error', title: 'Error al restaurar', message: err.response?.data?.message || 'Error al restaurar', onConfirm: null });
     } finally {
       setRestoring(null);
     }
@@ -693,6 +697,15 @@ const Perfil = () => {
           </div>
         </div>
       )}
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={() => setDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={dialog.onConfirm}
+        title={dialog.title}
+        message={dialog.message}
+      />
     </>
   );
 };

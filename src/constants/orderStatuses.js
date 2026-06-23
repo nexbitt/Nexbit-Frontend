@@ -34,37 +34,31 @@ export const STATUS_LABELS = {
   EN_REPARTO: 'EN REPARTO',
 };
 
-// Paleta semantica coherente:
-//   Verde  → completado / aprobado / confirmado (ENTREGADO, APROBADO, CONFIRMADO)
-//   Rojo   → cancelado / rechazado (CANCELADO, RECHAZADO)
-//   Azul   → en proceso / asignado / reparto (ASIGNADO, EN_CAMINO, EN_REPARTO)
-//   Teal   → disponible / listo para tomar (DISPONIBLE, CONFIRMADO)
-//   Amarillo → pendiente / espera (PENDIENTE)
-//   Naranja → requiere revision (EN_REVISION)
+// Paleta semantica — 11 hues únicos, ninguno se repite
 export const STATUS_COLORS = {
-  PENDIENTE:   { bg: '#fef9c3', color: '#854d0e' },
-  CONFIRMADO:  { bg: '#ecfdf5', color: '#065f46' },
-  EN_REVISION: { bg: '#fff7ed', color: '#c2410c' },
-  APROBADO:    { bg: '#f0fdf4', color: '#166534' },
-  RECHAZADO:   { bg: '#fef2f2', color: '#991b1b' },
-  ASIGNADO:    { bg: '#eff6ff', color: '#1e40af' },
-  EN_CAMINO:   { bg: '#eef2ff', color: '#4338ca' },
-  ENTREGADO:   { bg: '#ecfdf5', color: '#065f46' },
-  CANCELADO:   { bg: '#fef2f2', color: '#b91c1c' },
-  DISPONIBLE:  { bg: '#f0fdfa', color: '#115e59' },
-  EN_REPARTO:  { bg: '#eff6ff', color: '#1e40af' },
+  PENDIENTE:   { bg: '#fef3c7', color: '#92400e' },
+  CONFIRMADO:  { bg: '#e0f2fe', color: '#0369a1' },
+  EN_REVISION: { bg: '#ffedd5', color: '#c2410c' },
+  APROBADO:    { bg: '#d1fae5', color: '#065f46' },
+  RECHAZADO:   { bg: '#fee2e2', color: '#dc2626' },
+  ASIGNADO:    { bg: '#dbeafe', color: '#1d4ed8' },
+  EN_CAMINO:   { bg: '#ede9fe', color: '#6d28d9' },
+  ENTREGADO:   { bg: '#ccfbf1', color: '#0f766e' },
+  CANCELADO:   { bg: '#ffe4e6', color: '#be123c' },
+  DISPONIBLE:  { bg: '#cffafe', color: '#0891b2' },
+  EN_REPARTO:  { bg: '#e0e7ff', color: '#4338ca' },
 };
 
 export const TICKET_STATUS_COLORS = {
-  PENDIENTE:   { bg: '#fef9c3', color: '#92400e' },
-  CONFIRMADO:  { bg: '#ecfdf5', color: '#065f46' },
-  EN_REVISION: { bg: '#fff7ed', color: '#c2410c' },
-  APROBADO:    { bg: '#f0fdf4', color: '#166534' },
-  RECHAZADO:   { bg: '#fef2f2', color: '#991b1b' },
-  ASIGNADO:    { bg: '#eff6ff', color: '#1e40af' },
-  EN_CAMINO:   { bg: '#eef2ff', color: '#4338ca' },
-  ENTREGADO:   { bg: '#ecfdf5', color: '#065f46' },
-  CANCELADO:   { bg: '#fef2f2', color: '#b91c1c' },
+  PENDIENTE:   { bg: '#fef3c7', color: '#92400e' },
+  CONFIRMADO:  { bg: '#e0f2fe', color: '#0369a1' },
+  EN_REVISION: { bg: '#ffedd5', color: '#c2410c' },
+  APROBADO:    { bg: '#d1fae5', color: '#065f46' },
+  RECHAZADO:   { bg: '#fee2e2', color: '#dc2626' },
+  ASIGNADO:    { bg: '#dbeafe', color: '#1d4ed8' },
+  EN_CAMINO:   { bg: '#ede9fe', color: '#6d28d9' },
+  ENTREGADO:   { bg: '#ccfbf1', color: '#0f766e' },
+  CANCELADO:   { bg: '#ffe4e6', color: '#be123c' },
 };
 
 export const STATUS_TRANSLATIONS = {

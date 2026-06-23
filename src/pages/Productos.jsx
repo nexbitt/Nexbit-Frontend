@@ -1,21 +1,7 @@
-// ============================================================
-// PASO 7: frontend/src/pages/Productos.jsx  (REEMPLAZAR COMPLETO)
-// Cambios:
-//  - Estado `imagenFile` y `imagenPreview` para manejar la imagen
-//  - guardar() usa FormData en vez de JSON (necesario para enviar archivos)
-//  - Vista cliente muestra <img> real con fallback al ícono Package
-//  - Modal de administrador incluye campo para subir/cambiar imagen
-// ============================================================
-
-/**
- * @file Productos.jsx
- * @description Vista del catálogo de productos. Soporta modos Admin, Cliente e Invitado.
- * Gestiona la visualización, creación y edición de productos con soporte para imágenes.
- */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../api';
-import SearchBar from '../components/SearchBar';
-import { Pencil, Trash2, Package, ShoppingCart, Info, Upload, X, Search, AlertCircle } from 'lucide-react';
+import CustomDialog from '../components/ui/CustomDialog';
+import { Pencil, Trash2, Package, ShoppingCart, Info, Upload, X, Search, AlertCircle, Filter, Plus, Tags } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useModalScroll } from '../hooks/useModalScroll';
 
@@ -31,7 +17,6 @@ const URL_API_PUBLIC = "/api/productos/publico";
 const URL_CATEGORIAS = "/api/categorias";
 const URL_PROVEEDORES = "/api/proveedores";
 
-// ── Componente de imagen con fallback al ícono ───────────────
 const ProductoImagen = ({ src, alt, style = {}, iconSize = 56 }) => {
   const [error, setError] = useState(false);
   if (!src || error) {
@@ -61,7 +46,6 @@ const Productos = ({ variant }) => {
   const [loading, setLoading]               = useState(true);
   const [guardando, setGuardando]           = useState(false);
 
-  // Ficha técnica (RF005)
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
@@ -69,25 +53,32 @@ const Productos = ({ variant }) => {
   const isAdminView   = variant === 'admin' || !variant;
   useModalScroll(showModal || showDetailModal);
 
-  // Búsqueda y filtros
-  const [searchTerm, setSearchTerm]   = useState("");
-  const [filterEstado, setFilterEstado] = useState("ALL");
-  
+  const [searchTerm, setSearchTerm]     = useState("");
+  const [filterEstado, setFilterEstado]  = useState("ALL");
+  const [filterCategoria, setFilterCategoria] = useState("ALL");
 
-  // Campos del formulario
   const [idProducto, setIdProducto]     = useState(null);
   const [categoriaId, setCategoriaId]   = useState("");
   const [proveedorId, setProveedorId]   = useState("");
   const [nombre, setNombre]             = useState("");
   const [descripcion, setDescripcion]   = useState("");
-  const [precioCompra, setPrecioCompra] = useState(0);
-  const [precioVenta, setPrecioVenta]   = useState(0);
-  const [stockActual, setStockActual]   = useState(0);
-  const [stockMinimo, setStockMinimo]   = useState(0);
+  const [precioCompra, setPrecioCompra] = useState("");
+  const [precioVenta, setPrecioVenta]   = useState("");
+  const [stockActual, setStockActual]   = useState("");
+  const [stockMinimo, setStockMinimo]   = useState("");
   const [activo, setActivo]             = useState(1);
 
   const [fieldErrors, setFieldErrors] = useState({});
   const NAME_REGEX = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/;
+
+  const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '' });
+
+  const closeDialog = () => setDialog(prev => ({ ...prev, open: false }));
+
+  const [imagenFile, setImagenFile]       = useState(null);
+  const [imagenPreview, setImagenPreview] = useState(null);
+  const [imagenUrlActual, setImagenUrlActual] = useState(null);
+  const fileInputRef = useRef(null);
 
   const handleNameKeyDown = (e) => {
     if (e.key.length === 1 && !NAME_REGEX.test(e.key)) e.preventDefault();
@@ -113,14 +104,8 @@ const Productos = ({ variant }) => {
     return error;
   };
 
-  // ── NUEVO: estados para la imagen ───────────────────────────
-  const [imagenFile, setImagenFile]       = useState(null);    // Archivo seleccionado
-  const [imagenPreview, setImagenPreview] = useState(null);    // URL previa (blob o cloudinary)
-  const [imagenUrlActual, setImagenUrlActual] = useState(null); // URL ya guardada en BD
-
   const listar = () => {
     setLoading(true);
-    // Invitados y clientes usan el endpoint público (sin token)
     const endpoint = isAdminView ? URL_API : URL_API_PUBLIC;
     api.get(endpoint)
       .then(res => setProductos(res.data))
@@ -146,7 +131,7 @@ const Productos = ({ variant }) => {
 
   const limpiarFormulario = () => {
     setCategoriaId(""); setProveedorId(""); setNombre(""); setDescripcion("");
-    setPrecioCompra(0); setPrecioVenta(0); setStockActual(0); setStockMinimo(0);
+    setPrecioCompra(""); setPrecioVenta(""); setStockActual(""); setStockMinimo("");
     setActivo(1); setEnEdicion(false); setIdProducto(null);
     setImagenFile(null); setImagenPreview(null); setImagenUrlActual(null);
     setFieldErrors({});
@@ -166,26 +151,22 @@ const Productos = ({ variant }) => {
     setProveedorId(p.proveedor_id || "");
     setNombre(p.nombre);
     setDescripcion(p.descripcion || "");
-    setPrecioCompra(p.precio_compra);
-    setPrecioVenta(p.precio_venta);
-    setStockActual(p.stock_actual);
-    setStockMinimo(p.stock_minimo);
+    setPrecioCompra(String(p.precio_compra));
+    setPrecioVenta(String(p.precio_venta));
+    setStockActual(String(p.stock_actual));
+    setStockMinimo(String(p.stock_minimo));
     setActivo(p.activo);
-    // ── NUEVO: cargar imagen actual ──────────────────────────
     setImagenFile(null);
     setImagenUrlActual(p.imagen_url || null);
     setImagenPreview(p.imagen_url || null);
-    // ─────────────────────────────────────────────────────────
     setEnEdicion(true);
     setShowModal(true);
   };
 
-  // ── NUEVO: handler para selección de archivo ─────────────
   const handleImagenChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setImagenFile(file);
-    // Mostrar preview local antes de subir
     const blobUrl = URL.createObjectURL(file);
     setImagenPreview(blobUrl);
   };
@@ -194,21 +175,25 @@ const Productos = ({ variant }) => {
     setImagenFile(null);
     setImagenPreview(null);
     setImagenUrlActual(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // ── NUEVO: guardar usa FormData para enviar el archivo ───
   const guardar = async () => {
     const errNombre = validateField('nombre', nombre);
     if (errNombre) return;
 
-    if (!nombre || !categoriaId) {
-      alert("El nombre y la categoría son obligatorios");
+    const errors = [];
+    if (!nombre || !nombre.trim()) errors.push('El nombre del producto es obligatorio.');
+    if (!categoriaId) errors.push('La categoría es obligatoria.');
+    if (parseFloat(precioVenta) < parseFloat(precioCompra)) errors.push('El precio de venta debe ser mayor o igual al precio de compra.');
+
+    if (errors.length > 0) {
+      setDialog({ open: true, type: 'validation', title: 'Revisar información', message: '', errors });
       return;
     }
 
     setGuardando(true);
 
-    // FormData permite enviar texto + archivo en la misma petición
     const formData = new FormData();
     formData.append('categoria_id',  categoriaId || '');
     formData.append('proveedor_id',  proveedorId || '');
@@ -221,51 +206,59 @@ const Productos = ({ variant }) => {
     formData.append('activo',        activo);
 
     if (imagenFile) {
-      // Si hay un archivo nuevo, adjuntarlo con el campo "imagen"
-      // (debe coincidir con upload.single('imagen') en la ruta)
       formData.append('imagen', imagenFile);
     } else if (imagenUrlActual) {
-      // Si no cambió la imagen, mandar la URL actual para que no se borre
       formData.append('imagen_url', imagenUrlActual);
     }
-    // Si no hay imagen y tampoco URL actual, no se manda nada → imagen_url queda null
 
     try {
       if (enEdicion) {
         await api.put(`${URL_API}/${idProducto}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        alert("Producto actualizado correctamente.");
       } else {
         await api.post(URL_API, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        alert("Producto creado con éxito.");
       }
       limpiarFormulario();
       listar();
+      setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'El registro ha sido almacenado de manera segura en la base de datos y actualizado en los listados generales.' });
     } catch (err) {
       console.error("Error al guardar:", err);
-      alert("Error al guardar: " + (err.response?.data?.message || err.message));
+      setDialog({ open: true, type: 'error', title: 'Error en la operación', message: err.response?.data?.message || err.message });
     } finally {
       setGuardando(false);
     }
   };
 
-  const eliminar = (id) => {
-    if (window.confirm("¿Confirmar eliminación de este registro?")) {
-      api.delete(`${URL_API}/${id}`)
-        .then(() => listar())
-        .catch(err => {
-          console.error("Error al eliminar:", err);
-          alert("No se puede eliminar el producto. Detalle: " + (err.response?.data?.error || err.message));
-        });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const confirmDelete = (id) => {
+    setDeleteTarget(id);
+    setDialog({ open: true, type: 'confirm', title: 'Confirmar eliminación', message: '¿Está seguro de que desea eliminar este registro? Esta acción no se puede deshacer.' });
+  };
+
+  const ejecutarEliminar = async () => {
+    if (!deleteTarget) return;
+    try {
+      await api.delete(`${URL_API}/${deleteTarget}`);
+      listar();
+      closeDialog();
+      setDeleteTarget(null);
+      setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'El registro ha sido eliminado correctamente.' });
+    } catch (err) {
+      console.error("Error al eliminar:", err);
+      closeDialog();
+      setDeleteTarget(null);
+      setDialog({ open: true, type: 'error', title: 'Error en la operación', message: 'No se puede eliminar el producto. Razón: Este elemento se encuentra vinculado activamente a otras transacciones o históricos dentro del sistema. Se recomienda cambiar su estado a "Inactivo" en su lugar.' });
     }
   };
 
   const filteredProductos = productos.filter(p => {
     if (filterEstado === 'ACTIVE' && !p.activo) return false;
     if (filterEstado === 'INACTIVE' && p.activo) return false;
+    if (filterCategoria !== 'ALL' && Number(p.categoria_id) !== Number(filterCategoria)) return false;
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (p.nombre && p.nombre.toLowerCase().includes(term))
@@ -275,7 +268,10 @@ const Productos = ({ variant }) => {
 
   const displayItems = filteredProductos;
 
-  // ── VISTA CLIENTE / INVITADO ─────────────────────────────
+  const precioVentaVal = parseFloat(precioVenta);
+  const precioCompraVal = parseFloat(precioCompra);
+  const precioInvalido = !isNaN(precioVentaVal) && !isNaN(precioCompraVal) && precioCompraVal > 0 && precioVentaVal < precioCompraVal;
+
   if (!isAdminView) {
     return (
       <div className="storefront-container">
@@ -308,7 +304,6 @@ const Productos = ({ variant }) => {
               </div>
 
               <div className="product-body-split">
-                {/* ── Imagen real o ícono de fallback ── */}
                 <div
                   className="product-hc-left"
                   onClick={() => verDetalles(p)}
@@ -354,7 +349,6 @@ const Productos = ({ variant }) => {
           ))}
         </div>
 
-        {/* MODAL FICHA TÉCNICA (RF005) */}
         {showDetailModal && selectedProduct && (
           <div className="modal-backdrop" onClick={() => setShowDetailModal(false)}>
             <div className="modal-box detail-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '700px' }}>
@@ -364,7 +358,6 @@ const Productos = ({ variant }) => {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '25px', marginTop: '20px' }}>
-                {/* ── Imagen grande en la ficha técnica ── */}
                 <div style={{ background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', overflow: 'hidden', minHeight: '200px' }}>
                   <ProductoImagen src={selectedProduct.imagen_url} alt={selectedProduct.nombre} iconSize={100} />
                 </div>
@@ -410,25 +403,32 @@ const Productos = ({ variant }) => {
     );
   }
 
-  // ── VISTA ADMINISTRADOR ──────────────────────────────────
   return (
     <>
-      <div className="top-action-bar">
-        <button className="btn-add-record" onClick={abrirRegistro}>Añadir Producto</button>
-        <SearchBar
-          value={searchTerm}
-          onChange={(v) => { setSearchTerm(v); setCurrentPage(1); }}
-          placeholder="Buscar por nombre, categoría o proveedor..."
-          filters={[
-            { key: 'estado', label: 'Todos los estados', options: [
-              { value: 'ACTIVE', label: 'Activos' },
-              { value: 'INACTIVE', label: 'Inactivos' }
-            ]}
-          ]}
-          filterValues={{ estado: filterEstado }}
-          onFilterChange={(key, val) => setFilterEstado(val)}
-          onClear={() => { setSearchTerm(''); setFilterEstado('ALL'); setCurrentPage(1); }}
-        />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', height: '42px', padding: '0 12px', boxSizing: 'border-box' }}>
+          <Search size={16} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar por nombre, categoría o proveedor..." style={{ border: 'none', outline: 'none', flex: 1, padding: '0 8px', background: 'transparent', height: '100%', fontSize: '13px', color: '#111827', width: '100%' }} />
+          {searchTerm && <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex' }}><X size={14} color="#9CA3AF" /></button>}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', height: '42px', padding: '0 8px 0 12px', width: '180px', flexShrink: 0, boxSizing: 'border-box' }}>
+          <Tags size={14} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          <select value={filterCategoria} onChange={e => setFilterCategoria(e.target.value)} style={{ border: 'none', outline: 'none', flex: 1, padding: '0 4px', background: 'transparent', height: '100%', fontSize: '13px', color: '#111827', cursor: 'pointer' }}>
+            <option value="ALL">Todas las categorías</option>
+            {categoriasList.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>)}
+          </select>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', height: '42px', padding: '0 8px 0 12px', width: '160px', flexShrink: 0, boxSizing: 'border-box' }}>
+          <Filter size={14} color="#9CA3AF" style={{ flexShrink: 0 }} />
+          <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} style={{ border: 'none', outline: 'none', flex: 1, padding: '0 4px', background: 'transparent', height: '100%', fontSize: '13px', color: '#111827', cursor: 'pointer' }}>
+            <option value="ALL">Todos los estados</option>
+            <option value="ACTIVE">Activos</option>
+            <option value="INACTIVE">Inactivos</option>
+          </select>
+        </div>
+        <button onClick={abrirRegistro} style={{ height: '42px', padding: '0 24px', borderRadius: '9999px', border: 'none', background: '#111827', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
+          <Plus size={16} /> Añadir Producto
+        </button>
       </div>
 
       <div className="table-wrapper">
@@ -462,7 +462,6 @@ const Productos = ({ variant }) => {
               {displayItems.map((p) => (
                 <tr key={p.id_producto}>
                   <td>{p.id_producto}</td>
-                  {/* ── Thumbnail de imagen en la tabla ── */}
                   <td>
                     <div style={{ width: '48px', height: '48px', borderRadius: '6px', overflow: 'hidden' }}>
                       <ProductoImagen src={p.imagen_url} alt={p.nombre} iconSize={24} />
@@ -489,7 +488,7 @@ const Productos = ({ variant }) => {
                     <button className="btn-icon" onClick={() => seleccionarProducto(p)}>
                       <Pencil size={18} color="var(--primary)" />
                     </button>
-                    <button className="btn-icon" onClick={() => eliminar(p.id_producto)}>
+                    <button className="btn-icon" onClick={() => confirmDelete(p.id_producto)}>
                       <Trash2 size={18} color="var(--danger)" />
                     </button>
                   </td>
@@ -506,158 +505,234 @@ const Productos = ({ variant }) => {
         </div>
       )}
 
-      {/* ── MODAL ADMINISTRADOR ─────────────────────────── */}
       {showModal && (
         <div className="modal-backdrop">
-          <div className="modal-box" style={{ maxWidth: '620px' }}>
-            <h2>{enEdicion ? "Actualizar Producto" : "Nuevo Producto"}</h2>
-            <div className="form-grid">
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>ID</label>
-                <input type="text" value={idProducto || ''} disabled style={{ background: 'var(--border)', cursor: 'not-allowed' }} />
-              </div>
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>Nombre del Producto *</label>
-                <input
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  onKeyDown={handleNameKeyDown}
-                  onPaste={handleNamePaste}
-                  onBlur={() => validateField('nombre', nombre)}
-                  style={{ borderColor: fieldErrors.nombre ? '#EF4444' : undefined, borderWidth: fieldErrors.nombre ? '2px' : undefined }}
-                />
-                {fieldErrors.nombre && (
-                  <span style={{ color: '#EF4444', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                    <AlertCircle size={14} /> {fieldErrors.nombre}
-                  </span>
-                )}
-              </div>
-
-              <div className="input-field">
-                <label>Categoría *</label>
-                <select value={categoriaId} onChange={(e) => setCategoriaId(Number(e.target.value))}>
-                  <option value="" disabled>Seleccione categoría...</option>
-                  {categoriasList.map(c => (
-                    <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="input-field">
-                <label>Proveedor</label>
-                <select value={proveedorId} onChange={(e) => setProveedorId(Number(e.target.value))}>
-                  <option value="">Ninguno / Sin definir</option>
-                  {proveedoresList.map(pr => (
-                    <option key={pr.id_proveedor} value={pr.id_proveedor}>{pr.nombre}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* ── NUEVO: Campo de imagen ──────────────────── */}
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>Imagen del Producto</label>
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                  {/* Preview */}
-                  <div style={{
-                    width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden',
-                    border: '2px dashed #cbd5e1', flexShrink: 0, background: '#f8fafc',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                  }}>
-                    {imagenPreview
-                      ? <img src={imagenPreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <Package size={36} color="#94a3b8" />
-                    }
+          <div className="modal-box" style={{ maxWidth: '850px', overflowX: 'hidden', boxSizing: 'border-box', padding: '24px' }}>
+            <h2 style={{ marginBottom: '24px' }}>{enEdicion ? "Actualizar Producto" : "Nuevo Producto"}</h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '24px 32px',
+              boxSizing: 'border-box',
+              width: '100%',
+            }}>
+              {/* ── COLUMNA IZQUIERDA ── */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box', width: '100%' }}>
+                {/* ID + Nombre */}
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', width: '100%' }}>
+                  <div className="input-field" style={{ width: '80px', flexShrink: 0 }}>
+                    <label>ID</label>
+                    <input type="text" value={idProducto || ''} disabled style={{ background: '#E5E7EB', cursor: 'not-allowed', width: '100%', boxSizing: 'border-box' }} />
                   </div>
-
-                  {/* Controles */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                    <label
-                      htmlFor="input-imagen"
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-                        padding: '8px 16px', borderRadius: '6px', border: '1px solid #cbd5e1',
-                        background: '#f8fafc', fontSize: '0.85rem', color: '#475569',
-                        width: 'fit-content'
-                      }}
-                    >
-                      <Upload size={16} />
-                      {imagenPreview ? 'Cambiar imagen' : 'Subir imagen'}
-                    </label>
+                  <div className="input-field" style={{ flex: 1, minWidth: 0 }}>
+                    <label>Nombre del Producto *</label>
                     <input
-                      id="input-imagen"
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={handleImagenChange}
-                      style={{ display: 'none' }}
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      onKeyDown={handleNameKeyDown}
+                      onPaste={handleNamePaste}
+                      onBlur={() => validateField('nombre', nombre)}
+                      placeholder="Ej: Laptop HP ProBook"
+                      style={{ borderColor: fieldErrors.nombre ? '#EF4444' : undefined, borderWidth: fieldErrors.nombre ? '2px' : undefined, width: '100%', boxSizing: 'border-box' }}
                     />
-                    <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: 0 }}>
-                      JPG, PNG o WEBP · Máx. 5MB
-                    </p>
-                    {imagenPreview && (
-                      <button
-                        onClick={quitarImagen}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '6px',
-                          background: 'none', border: 'none', color: 'var(--danger)',
-                          cursor: 'pointer', fontSize: '0.82rem', padding: 0
-                        }}
-                      >
-                        <X size={14} /> Quitar imagen
-                      </button>
+                    {fieldErrors.nombre && (
+                      <span style={{ color: '#EF4444', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                        <AlertCircle size={14} /> {fieldErrors.nombre}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Categoría + Proveedor */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%' }}>
+                  <div className="input-field">
+                    <label>Categoría *</label>
+                    <select value={categoriaId} onChange={(e) => setCategoriaId(Number(e.target.value))} style={{ width: '100%', boxSizing: 'border-box' }}>
+                      <option value="" disabled>Seleccione categoría...</option>
+                      {categoriasList.map(c => (
+                        <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="input-field">
+                    <label>Proveedor</label>
+                    <select value={proveedorId} onChange={(e) => setProveedorId(Number(e.target.value))} style={{ width: '100%', boxSizing: 'border-box' }}>
+                      <option value="">Ninguno / Sin definir</option>
+                      {proveedoresList.map(pr => (
+                        <option key={pr.id_proveedor} value={pr.id_proveedor}>{pr.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Precio Compra + Precio Venta */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%' }}>
+                  <div className="input-field">
+                    <label>Precio Compra</label>
+                    <input
+                      type="number" step="0.01" min="0"
+                      value={precioCompra}
+                      onChange={(e) => setPrecioCompra(e.target.value)}
+                      onKeyDown={handleNumericKeyDown}
+                      placeholder="0.00"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div className="input-field">
+                    <label>Precio Venta</label>
+                    <input
+                      type="number" step="0.01" min="0"
+                      value={precioVenta}
+                      onChange={(e) => setPrecioVenta(e.target.value)}
+                      onKeyDown={handleNumericKeyDown}
+                      placeholder="0.00"
+                      style={{
+                        width: '100%', boxSizing: 'border-box',
+                        borderColor: precioInvalido ? '#EF4444' : undefined,
+                        borderWidth: precioInvalido ? '2px' : undefined,
+                      }}
+                    />
+                    {precioInvalido && (
+                      <span style={{ color: '#EF4444', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                        <AlertCircle size={14} /> El precio de venta debe ser mayor o igual al de compra
+                      </span>
                     )}
                   </div>
                 </div>
               </div>
-              {/* ─────────────────────────────────────────────── */}
 
-              <div className="input-field">
-                <label>Precio Compra</label>
-                <input type="number" step="0.01" min="0" value={precioCompra} onChange={(e) => setPrecioCompra(e.target.value)} onKeyDown={handleNumericKeyDown} />
-              </div>
+              {/* ── COLUMNA DERECHA ── */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box', width: '100%' }}>
+                {/* Imagen Dropzone */}
+                <div className="input-field">
+                  <label>Imagen del Producto</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%' }}>
+                    <div style={{
+                      width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden',
+                      border: '2px dashed #cbd5e1', flexShrink: 0, background: '#f8fafc',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      {imagenPreview
+                        ? <img src={imagenPreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <Package size={24} color="#94a3b8" />
+                      }
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label
+                        htmlFor="input-imagen"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+                          fontSize: '0.85rem', color: '#111827', fontWeight: 600,
+                          width: 'fit-content'
+                        }}
+                      >
+                        <Upload size={14} />
+                        SUBIR IMAGEN
+                      </label>
+                      <span style={{ fontSize: '11px', color: '#64748B' }}>
+                        JPG, PNG o WEBP • Máx. 5MB
+                      </span>
+                      {imagenPreview && (
+                        <button
+                          onClick={quitarImagen}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.8rem', padding: 0, width: 'fit-content' }}
+                        >
+                          <X size={12} /> Quitar imagen
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    id="input-imagen"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleImagenChange}
+                    style={{ display: 'none' }}
+                  />
+                </div>
 
-              <div className="input-field">
-                <label>Precio Venta</label>
-                <input type="number" step="0.01" min="0" value={precioVenta} onChange={(e) => setPrecioVenta(e.target.value)} onKeyDown={handleNumericKeyDown} />
-              </div>
+                {/* Stock Actual + Stock Mínimo */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%' }}>
+                  <div className="input-field">
+                    <label>Stock Actual</label>
+                    <input
+                      type="number" min="0" step="1"
+                      value={stockActual}
+                      onChange={(e) => setStockActual(e.target.value)}
+                      onKeyDown={handleIntegerKeyDown}
+                      placeholder="0"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div className="input-field">
+                    <label>Stock Mínimo</label>
+                    <input
+                      type="number" min="0" step="1"
+                      value={stockMinimo}
+                      onChange={(e) => setStockMinimo(e.target.value)}
+                      onKeyDown={handleIntegerKeyDown}
+                      placeholder="0"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
 
-              <div className="input-field">
-                <label>Stock Actual</label>
-                <input type="number" min="0" value={stockActual} onChange={(e) => setStockActual(e.target.value)} onKeyDown={handleIntegerKeyDown} />
-              </div>
+                {/* Descripción */}
+                <div className="input-field">
+                  <label>Descripción</label>
+                    <textarea
+                      value={descripcion}
+                      onChange={(e) => setDescripcion(e.target.value)}
+                      style={{ width: '100%', fontSize: '0.9rem', fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' }}
+                      placeholder="Breve descripción del producto..."
+                    />
+                </div>
 
-              <div className="input-field">
-                <label>Stock Mínimo</label>
-                <input type="number" min="0" value={stockMinimo} onChange={(e) => setStockMinimo(e.target.value)} onKeyDown={handleIntegerKeyDown} />
-              </div>
-
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>Descripción</label>
-                <textarea
-                  value={descripcion}
-                  onChange={(e) => setDescripcion(e.target.value)}
-                  rows={2}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                />
-              </div>
-
-              <div className="input-field" style={{ gridColumn: 'span 2' }}>
-                <label>Estado</label>
-                <select value={activo} onChange={(e) => setActivo(Number(e.target.value))}>
-                  <option value={1}>Activo</option>
-                  <option value={0}>Inactivo</option>
-                </select>
+                {/* Estado */}
+                <div className="input-field">
+                  <label>Estado</label>
+                  <select value={activo} onChange={(e) => setActivo(Number(e.target.value))} style={{ width: '100%', boxSizing: 'border-box' }}>
+                    <option value={1}>Activo</option>
+                    <option value={0}>Inactivo</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="modal-btns">
+            <div className="modal-btns" style={{ borderTop: '1px solid #E5E7EB', marginTop: '24px', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <button className="btn-cancel" onClick={limpiarFormulario} disabled={guardando}>Cancelar</button>
-              <button className="btn-save" onClick={guardar} disabled={guardando}>
-                {guardando ? 'Guardando...' : 'Guardar Cambios'}
+              <button
+                className="btn-save"
+                onClick={guardar}
+                disabled={guardando || precioInvalido}
+                style={{ opacity: guardando || precioInvalido ? 0.6 : 1 }}
+              >
+                {guardando ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="spinner" style={{ width: '16px', height: '16px', borderTopColor: '#fff', borderWidth: '2px' }} /> Guardando...
+                  </span>
+                ) : 'Guardar Cambios'}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <CustomDialog
+        type={dialog.type}
+        open={dialog.open}
+        onClose={closeDialog}
+        onConfirm={dialog.type === 'confirm' ? ejecutarEliminar : closeDialog}
+        title={dialog.title}
+        message={dialog.type !== 'validation' ? dialog.message : undefined}
+      >
+        {dialog.type === 'validation' && dialog.errors && (
+          <ul className="cd-error-list">
+            {dialog.errors.map((err, i) => <li key={i}>{err}</li>)}
+          </ul>
+        )}
+      </CustomDialog>
     </>
   );
 };
