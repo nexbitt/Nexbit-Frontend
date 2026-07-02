@@ -11,7 +11,7 @@ import ToggleRow from '../components/ui/ToggleRow';
 import CustomDialog from '../components/ui/CustomDialog';
 import { useModalScroll } from '../hooks/useModalScroll';
 
-const URL_API = "/api/pedidos";
+const URL_API = "/api/v1/pedidos";
 
 const TABS = [
   { id: 'datos', label: 'Datos Personales', icon: UserCircle },
@@ -103,7 +103,7 @@ const Perfil = () => {
 
   const cargarPerfil = () => {
     setLoading(true);
-    api.get(`/api/usuarios/${user.id_usuario}`)
+    api.get(`/api/v1/usuarios/${user.id_usuario}`)
       .then(res => {
         const u = res.data;
         if (u) {
@@ -139,7 +139,7 @@ const Perfil = () => {
     setPasswordLoading(true);
     setPasswordError('');
     try {
-      const res = await api.post('/api/usuarios/verificar-contrasena', { password: currentPassword });
+      const res = await api.post('/api/v1/usuarios/verificar-contrasena', { password: currentPassword });
       if (res.data.valida) {
         setPasswordVerified(true);
         setEditNombre(nombre);
@@ -185,7 +185,7 @@ const Perfil = () => {
     setSaving(true);
     setMensaje(null);
     try {
-      await api.put(`/api/usuarios/${user.id_usuario}`, datos);
+      await api.put(`/api/v1/usuarios/${user.id_usuario}`, datos);
       setNombre(editNombre);
       setEmail(editEmail);
       setTipoDoc(editTipoDoc);

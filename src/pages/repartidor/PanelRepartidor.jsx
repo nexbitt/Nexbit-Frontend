@@ -14,7 +14,7 @@ const PanelRepartidor = () => {
   const obtenerPedidos = async () => {
     setCargando(true);
     try {
-      const res = await api.get('/api/reparto/pedidos');
+      const res = await api.get('/api/v1/reparto/pedidos');
       setPedidosDisponibles(res.data.available || []);
       setMisPedidos(res.data.active || []);
     } catch (error) {

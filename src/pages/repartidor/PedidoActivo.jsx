@@ -20,7 +20,7 @@ const PedidoActivo = () => {
 
   const cargar = useCallback(async () => {
     try {
-      const res = await api.get('/api/reparto/activo');
+      const res = await api.get('/api/v1/reparto/activo');
       setPedido(res.data);
     } catch {
       setPedido(null);
@@ -43,7 +43,7 @@ const PedidoActivo = () => {
   const marcarEnCamino = async () => {
     setAccion('camino');
     try {
-      await api.put(`/api/reparto/${pedido.id_pedido}/en-camino`);
+      await api.put(`/api/v1/reparto/${pedido.id_pedido}/en-camino`);
       setPedido((prev) => ({ ...prev, estado_fsm: FSM_STATUS.EN_CAMINO, estado_db: ORDER_STATUS.EN_CAMINO }));
     } catch (err) {
       setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.error || 'Error al actualizar', onConfirm: null });
@@ -55,7 +55,7 @@ const PedidoActivo = () => {
   const confirmarEntrega = async () => {
     setAccion('entregar');
     try {
-      await api.post(`/api/reparto/${pedido.id_pedido}/entregar`);
+      await api.post(`/api/v1/reparto/${pedido.id_pedido}/entregar`);
       setPedido(null);
       cargar();
     } catch (err) {
@@ -69,7 +69,7 @@ const PedidoActivo = () => {
     if (!descripcionProblema.trim()) return;
     setAccion('problema');
     try {
-      const res = await api.post(`/api/reparto/${pedido.id_pedido}/problema`, {
+      const res = await api.post(`/api/v1/reparto/${pedido.id_pedido}/problema`, {
         descripcion: descripcionProblema,
       });
       setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: res.data.message, onConfirm: null });
@@ -87,7 +87,7 @@ const PedidoActivo = () => {
       setDialog(prev => ({ ...prev, open: false }));
       setAccion('cancelar');
       try {
-        await api.put(`/api/reparto/${pedido.id_pedido}/cancelar`, { motivo: 'Cancelado por repartidor' });
+        await api.put(`/api/v1/reparto/${pedido.id_pedido}/cancelar`, { motivo: 'Cancelado por repartidor' });
         setPedido(null);
         cargar();
       } catch (err) {

@@ -39,7 +39,7 @@ const PerfilRepartidor = () => {
 
   const cargarPerfil = () => {
     setLoading(true);
-    api.get(`/api/usuarios/${user.id_usuario}`)
+    api.get(`/api/v1/usuarios/${user.id_usuario}`)
       .then(res => {
         const u = res.data;
         if (u) {
@@ -78,7 +78,7 @@ const PerfilRepartidor = () => {
     setMensaje(null);
 
     try {
-      await api.put(`/api/usuarios/${user.id_usuario}`, datos);
+      await api.put(`/api/v1/usuarios/${user.id_usuario}`, datos);
       setPassword('');
       setMensaje({ tipo: 'ok', texto: '¡Perfil actualizado con éxito!' });
     } catch (err) {

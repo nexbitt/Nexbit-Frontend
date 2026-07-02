@@ -15,8 +15,8 @@ const InicioRepartidor = () => {
     const cargar = async () => {
       try {
         const [repartidorRes, statsRes] = await Promise.all([
-          api.get(`/api/repartidores/${user?.id_usuario}`).catch(() => ({ data: null })),
-          api.get('/api/reparto/stats').catch(() => ({ data: { disponibles: 0, activo: 0, entregados: 0, cancelados: 0 } })),
+          api.get(`/api/v1/repartidores/${user?.id_usuario}`).catch(() => ({ data: null })),
+          api.get('/api/v1/reparto/stats').catch(() => ({ data: { disponibles: 0, activo: 0, entregados: 0, cancelados: 0 } })),
         ]);
         setDatos(repartidorRes.data);
         setStats(statsRes.data);

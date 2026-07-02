@@ -29,7 +29,7 @@ import {
   RefreshCw, ChevronRight, Users, Receipt
 } from 'lucide-react';
 
-const API = '/api/reportes';
+const API = '/api/v1/reportes';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n) => Number(n ?? 0).toLocaleString('es-CO');

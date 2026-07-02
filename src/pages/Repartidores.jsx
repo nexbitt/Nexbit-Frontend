@@ -5,7 +5,7 @@ import { useModalScroll } from '../hooks/useModalScroll';
 import { ORDER_STATUS, STATUS_LABELS } from '../constants/orderStatuses';
 import CustomDialog from '../components/ui/CustomDialog';
 
-const URL_API = "/api/repartidores";
+const URL_API = "/api/v1/repartidores";
 
 const Repartidores = () => {
   const [repartidores, setRepartidores] = useState([]);

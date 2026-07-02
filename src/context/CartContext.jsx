@@ -21,7 +21,7 @@ const generateSessionId = () => {
   return sessionId;
 };
 
-const URL_CARRITO = '/api/carrito';
+const URL_CARRITO = '/api/v1/carrito';
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
@@ -135,7 +135,7 @@ export const CartProvider = ({ children }) => {
   const checkout = async () => {
     if (!isAuthenticated || !usuario_id) return false;
     try {
-      const res = await api.post('/api/pedidos/checkout', { usuario_id });
+      const res = await api.post('/api/v1/pedidos/checkout', { usuario_id });
       setCartItems([]);
       return { success: true, id_pedido: res.data.id_pedido };
     } catch (err) {

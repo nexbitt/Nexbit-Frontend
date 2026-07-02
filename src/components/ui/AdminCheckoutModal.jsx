@@ -39,8 +39,8 @@ const AdminCheckoutModal = ({ open, onClose, onSuccess }) => {
 
   useEffect(() => {
     if (open) {
-      api.get('/api/usuarios?rol=Cliente').then(res => setClients(res.data || [])).catch(() => {});
-      api.get('/api/productos?activo=true').then(res => setProducts(res.data || [])).catch(() => {});
+      api.get('/api/v1/usuarios?rol=Cliente').then(res => setClients(res.data || [])).catch(() => {});
+      api.get('/api/v1/productos?activo=true').then(res => setProducts(res.data || [])).catch(() => {});
     }
   }, [open]);
 
@@ -109,7 +109,7 @@ const AdminCheckoutModal = ({ open, onClose, onSuccess }) => {
     const formData = new FormData();
     formData.append('imagen', selectedFile);
     try {
-      const res = await api.post('/api/uploads/cloudinary', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const res = await api.post('/api/v1/uploads/cloudinary', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       if (res.data?.url) {
         setUploadedUrl(res.data.url);
         setUploadedPublicId(res.data.public_id || '');
@@ -145,7 +145,7 @@ const AdminCheckoutModal = ({ open, onClose, onSuccess }) => {
       productos: cart.map(c => ({ producto_id: c.producto_id, cantidad: c.cantidad }))
     };
     try {
-      await api.post('/api/pedidos', payload);
+      await api.post('/api/v1/pedidos', payload);
       if (onSuccess) onSuccess();
       setDialog({ open: true, type: 'success', title: 'Pedido creado', message: 'Pedido creado correctamente.', onConfirm: () => {
         setDialog(prev => ({ ...prev, open: false }));
@@ -165,7 +165,7 @@ const AdminCheckoutModal = ({ open, onClose, onSuccess }) => {
   };
 
   const handleClose = () => {
-    if (uploadedPublicId) api.delete(`/api/uploads/cloudinary/${uploadedPublicId}`).catch(() => {});
+    if (uploadedPublicId) api.delete(`/api/v1/uploads/cloudinary/${uploadedPublicId}`).catch(() => {});
     internalCleanup();
     onClose();
   };

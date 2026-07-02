@@ -4,7 +4,7 @@ import { Pencil, Trash2, Tags, Search, X, Plus } from 'lucide-react';
 import CustomDialog from '../components/ui/CustomDialog';
 import CategoriaFormModal from '../components/ui/CategoriaFormModal';
 
-const URL_API = "/api/categorias";
+const URL_API = "/api/v1/categorias";
 
 const Categorias = () => {
   const [categorias, setCategorias] = useState([]);

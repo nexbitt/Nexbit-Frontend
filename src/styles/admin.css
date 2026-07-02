@@ -1,0 +1,8 @@
+/* ==========================================
+   admin.css — Indexador central de estilos del panel
+   Fragmentación Fase 4: Arquitectura modular por dominio
+   ========================================== */
+
+@import './admin/layout.css';
+@import './admin/crud-cards.css';
+@import './admin/forms-modals.css';

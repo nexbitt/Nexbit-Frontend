@@ -38,6 +38,7 @@ import Carrito from './pages/Carrito';
 import Ayuda from './pages/Ayuda';
 import Contacto from './pages/Contacto';
 import Reportes from './pages/Reportes';
+import Tickets from './pages/Tickets';
 import ConfirmacionPedido from './pages/ConfirmacionPedido';
 
 // Páginas del repartidor
@@ -280,6 +281,7 @@ function AppRoutes() {
         <Route path="repartidores" element={<Repartidores />} />
         <Route path="perfil" element={<Perfil />} />
         <Route path="reportes" element={<Reportes />} />
+        <Route path="tickets" element={<Tickets />} />
       </Route>
 
       {/* Catch-all */}

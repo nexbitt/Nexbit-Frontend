@@ -12,10 +12,10 @@ const formatCOP = (valor) =>
     minimumFractionDigits: 0,
   }).format(valor);
 
-const URL_API        = "/api/productos";
-const URL_API_PUBLIC = "/api/productos/publico";
-const URL_CATEGORIAS = "/api/categorias";
-const URL_PROVEEDORES = "/api/proveedores";
+const URL_API        = "/api/v1/productos";
+const URL_API_PUBLIC = "/api/v1/productos/publico";
+const URL_CATEGORIAS = "/api/v1/categorias";
+const URL_PROVEEDORES = "/api/v1/proveedores";
 
 const ProductoImagen = ({ src, alt, style = {}, iconSize = 56 }) => {
   const [error, setError] = useState(false);

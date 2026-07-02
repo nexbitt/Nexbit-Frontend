@@ -19,7 +19,7 @@ const HistorialRepartidor = () => {
 
   const cargar = useCallback(async () => {
     try {
-      const res = await api.get(`/api/reparto/historial?filtro=${filtro}`);
+      const res = await api.get(`/api/v1/reparto/historial?filtro=${filtro}`);
       setHistorial(res.data);
     } catch (err) {
       console.error('Error cargando historial:', err);

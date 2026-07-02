@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { CheckCircle, Upload, FileImage, X, ChevronLeft, Building, AlertCircle, Smartphone, CreditCard, Landmark } from 'lucide-react';
 
-const CONFIRMACION_RUTA = '/api/pedidos';
+const CONFIRMACION_RUTA = '/api/v1/pedidos';
 
 const bankIcons = {
   'Bancolombia': Landmark,
@@ -27,7 +27,7 @@ const ConfirmacionPedido = ({ variant }) => {
   useEffect(() => {
     Promise.all([
       api.get(`${CONFIRMACION_RUTA}/${id}/ticket`),
-      api.get('/api/bancos').catch(() => ({ data: [] }))
+      api.get('/api/v1/bancos').catch(() => ({ data: [] }))
     ])
       .then(([pedidoRes, bancosRes]) => {
         setPedido(pedidoRes.data);

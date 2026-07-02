@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Instancia global con credenciales para que la httpOnly cookie viaje en cada request
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
   withCredentials: true,
 });
 

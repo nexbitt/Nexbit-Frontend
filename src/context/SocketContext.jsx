@@ -26,7 +26,7 @@ export const SocketProvider = ({ children }) => {
 
   const fetchPendingReviewCount = useCallback(async () => {
     try {
-      const res = await api.get('/api/pedidos/en-revision');
+      const res = await api.get('/api/v1/pedidos/en-revision');
       setPendingReviewCount(res.data.length || 0);
     } catch (err) {
       console.error('Error fetching pending review count:', err);

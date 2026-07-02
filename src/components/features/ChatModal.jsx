@@ -20,7 +20,7 @@ const ChatModal = ({ pedidoId, onClose }) => {
   useEffect(() => {
     const cargarConversacion = async () => {
       try {
-        const res = await api.get(`/api/chat/conversacion/pedido/${pedidoId}`);
+        const res = await api.get(`/api/v1/chat/conversacion/pedido/${pedidoId}`);
         setConversacion(res.data);
         setMensajes(res.data.mensajes || []);
       } catch (err) {
@@ -68,7 +68,7 @@ const ChatModal = ({ pedidoId, onClose }) => {
     if (!nuevoMensaje.trim() || !conversacion || enviando) return;
     setEnviando(true);
     try {
-      const res = await api.post(`/api/chat/conversacion/${conversacion.id_conversacion}/mensajes`, {
+      const res = await api.post(`/api/v1/chat/conversacion/${conversacion.id_conversacion}/mensajes`, {
         mensaje: nuevoMensaje.trim()
       });
       setMensajes(prev => [...prev, res.data]);

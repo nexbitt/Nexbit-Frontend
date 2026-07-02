@@ -56,9 +56,9 @@ const RolFormModal = ({ open, onClose, onSuccess, rol }) => {
 
     try {
       if (isEdit) {
-        await api.put(`/api/roles/${rol.id_rol}`, data);
+        await api.put(`/api/v1/roles/${rol.id_rol}`, data);
       } else {
-        await api.post('/api/roles', data);
+        await api.post('/api/v1/roles', data);
       }
       setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: `Rol ${isEdit ? 'actualizado' : 'creado'} correctamente.`, onConfirm: () => {
         setDialog(prev => ({ ...prev, open: false }));

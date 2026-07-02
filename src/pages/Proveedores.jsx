@@ -4,7 +4,7 @@ import { Pencil, Trash2, Truck, Search, X, Plus } from 'lucide-react';
 import CustomDialog from '../components/ui/CustomDialog';
 import ProveedorFormModal from '../components/ui/ProveedorFormModal';
 
-const URL_API = "/api/proveedores";
+const URL_API = "/api/v1/proveedores";
 
 const Proveedores = () => {
   const [proveedores, setProveedores] = useState([]);

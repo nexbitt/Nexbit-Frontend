@@ -11,7 +11,7 @@ const ActiveBanner = ({ repartidorId }) => {
   useEffect(() => {
     const checkActivo = async () => {
       try {
-        const res = await api.get('/api/reparto/activo');
+        const res = await api.get('/api/v1/reparto/activo');
         setActivo(res.data);
       } catch {
         setActivo(null);

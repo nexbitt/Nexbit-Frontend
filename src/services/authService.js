@@ -21,7 +21,7 @@ export const clearSession = () => {
 export const logout = async () => {
     try {
         // Pedimos al servidor que limpie la httpOnly cookie
-        await axios.post('/api/usuarios/logout', {}, { withCredentials: true });
+        await axios.post('/api/v1/usuarios/logout', {}, { withCredentials: true });
     } catch (_) {
         // Si el servidor no responde, seguimos limpiando el estado local
     } finally {

@@ -4,7 +4,7 @@ import { Pencil, ShieldCheck, Plus, Search, X } from 'lucide-react';
 import CustomDialog from '../components/ui/CustomDialog';
 import RolFormModal from '../components/ui/RolFormModal';
 
-const URL_API = "/api/roles";
+const URL_API = "/api/v1/roles";
 
 const Roles = () => {
   const [roles, setRoles] = useState([]);

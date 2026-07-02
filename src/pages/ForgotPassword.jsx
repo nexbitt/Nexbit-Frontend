@@ -73,7 +73,7 @@ const ForgotPassword = () => {
     if (!email) { setError('Ingresa tu correo electrónico.'); return; }
     setLoading(true);
     try {
-      await api.post('/api/auth/recover-password', { email });
+      await api.post('/api/v1/auth/recover-password', { email });
       setCountdown(60);
       transitionTo(STEP_OTP);
     } catch (err) {
@@ -88,7 +88,7 @@ const ForgotPassword = () => {
     setError('');
     setLoading(true);
     try {
-      await api.post('/api/auth/recover-password', { email });
+      await api.post('/api/v1/auth/recover-password', { email });
       setCountdown(60);
       setOtp(['', '', '', '', '', '']);
       otpRefs.current[0]?.focus();
@@ -130,7 +130,7 @@ const ForgotPassword = () => {
     if (code.length !== 6) { setError('Ingresa el código completo de 6 dígitos.'); return; }
     setLoading(true);
     try {
-      const res = await api.post('/api/auth/verify-otp', { email, code });
+      const res = await api.post('/api/v1/auth/verify-otp', { email, code });
       setResetToken(res.data.data?.token || '');
       transitionTo(STEP_PASSWORD);
     } catch (err) {
@@ -150,7 +150,7 @@ const ForgotPassword = () => {
     if (password !== confirmPassword) { setError('Las contraseñas no coinciden.'); return; }
     setLoading(true);
     try {
-      await api.post('/api/auth/reset-password', {
+      await api.post('/api/v1/auth/reset-password', {
         email, token: resetToken, newPassword: password
       });
       setSuccess('Contraseña actualizada correctamente.');

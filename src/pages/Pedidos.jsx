@@ -14,9 +14,9 @@ import AdminCheckoutModal from '../components/ui/AdminCheckoutModal';
 import { ORDER_STATUS, FSM_STATUS, STATUS_LABELS, STATUS_COLORS, TICKET_STATUS_COLORS, ALL_STATUSES } from '../constants/orderStatuses';
 import { useSocket } from '../context/SocketContext';
 
-const URL_API = "/api/pedidos";
-const URL_USUARIOS = "/api/usuarios";
-const URL_ADMIN = "/api/admin";
+const URL_API = "/api/v1/pedidos";
+const URL_USUARIOS = "/api/v1/usuarios";
+const URL_ADMIN = "/api/v1/admin";
 
 const Pedidos = ({ variant }) => {
   const [pedidos, setPedidos] = useState([]);

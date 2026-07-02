@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
 
       try {
         // Validar si el token en la cookie sigue siendo válido
-        const res = await api.get('/api/usuarios/me');
+        const res = await api.get('/api/v1/usuarios/me');
         setUser(res.data);
         setIsAuthenticated(true);
       } catch (err) {

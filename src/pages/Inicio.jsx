@@ -66,7 +66,7 @@ const Inicio = () => {
 
   const fetchStats = async () => {
     try {
-      const { data } = await api.get('/api/stats');
+      const { data } = await api.get('/api/v1/stats');
       setStats(data);
     } catch {
       // Si falla, mantiene el último valor conocido

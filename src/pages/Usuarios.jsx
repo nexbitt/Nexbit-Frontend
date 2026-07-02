@@ -5,7 +5,7 @@ import { useModalScroll } from '../hooks/useModalScroll';
 import CustomDialog from '../components/ui/CustomDialog';
 import UsuarioFormModal from '../components/ui/UsuarioFormModal';
 
-const URL_API = "/api/usuarios";
+const URL_API = "/api/v1/usuarios";
 
 const Usuarios = () => {
   const [usuarios, setUsuarios] = useState([]);

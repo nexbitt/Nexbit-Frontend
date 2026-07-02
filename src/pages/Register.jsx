@@ -28,7 +28,7 @@ export default function Register() {
 
     const fetchRoles = async () => {
         try {
-            const res = await api.get('/api/usuarios/roles');
+            const res = await api.get('/api/v1/usuarios/roles');
             setRoles(res.data);
             
             if (res.data.length > 0) {
@@ -57,7 +57,7 @@ export default function Register() {
 
         setLoading(true);
         try {
-            await api.post('/api/usuarios', formData);
+            await api.post('/api/v1/usuarios', formData);
             setSuccess('¡Usuario registrado exitosamente! Ya puedes iniciar sesión.');
             setFormData({
                 rol_id: '',

@@ -12,7 +12,7 @@ import api from '../api';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const URL_LOGIN = "/api/usuarios/login";
+const URL_LOGIN = "/api/v1/usuarios/login";
 
 const Login = () => {
   const [email, setEmail] = useState('');

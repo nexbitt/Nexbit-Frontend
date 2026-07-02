@@ -34,6 +34,7 @@ const NAV_GROUPS = [
       { to: '/admin/productos', Icon: Boxes, label: 'Productos' },
       { to: '/admin/categorias', Icon: Tags, label: 'Categorías' },
       { to: '/admin/reportes', Icon: BarChart2, label: 'Reportes' },
+      { to: '/admin/tickets', Icon: Ticket, label: 'Tickets' },
     ],
   },
   {

@@ -10,7 +10,7 @@ const ModalDetallePedido = ({ pedido, tipo, alCerrar, alActualizar }) => {
 
   const manejarAceptar = async () => {
     try {
-      await api.post(`/api/reparto/pedidos/${pedido.id_pedido}/aceptar`);
+      await api.post(`/api/v1/reparto/pedidos/${pedido.id_pedido}/aceptar`);
       setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Pedido aceptado con éxito', onConfirm: null });
       alActualizar();
       alCerrar();
@@ -29,7 +29,7 @@ const ModalDetallePedido = ({ pedido, tipo, alCerrar, alActualizar }) => {
     setDialog({ open: true, type: 'confirm', title: 'Confirmar entrega', message: '¿Estás seguro de que deseas confirmar la entrega de este pedido?', onConfirm: async () => {
       setDialog(prev => ({ ...prev, open: false }));
       try {
-        await api.post(`/api/reparto/pedidos/${pedido.id_pedido}/entregar`);
+        await api.post(`/api/v1/reparto/pedidos/${pedido.id_pedido}/entregar`);
         setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'Entrega confirmada con éxito', onConfirm: null });
         alActualizar();
         alCerrar();

@@ -21,8 +21,8 @@ const PedidosDisponibles = () => {
   const cargar = useCallback(async () => {
     try {
       const [pedidosRes, zonasRes] = await Promise.all([
-        api.get('/api/reparto/disponibles'),
-        api.get('/api/reparto/zonas-calientes').catch(() => ({ data: [] })),
+        api.get('/api/v1/reparto/disponibles'),
+        api.get('/api/v1/reparto/zonas-calientes').catch(() => ({ data: [] })),
       ]);
       setDisponibles(pedidosRes.data);
       setZonas(zonasRes.data);
@@ -50,7 +50,7 @@ const PedidosDisponibles = () => {
   const tomarPedido = async (id) => {
     setTomando(id);
     try {
-      await api.post(`/api/reparto/${id}/tomar`);
+      await api.post(`/api/v1/reparto/${id}/tomar`);
       navigate('/repartidor/activo');
     } catch (err) {
       setDialog({ open: true, type: 'error', title: 'Error', message: err.response?.data?.error || 'Error al tomar el pedido', onConfirm: null });

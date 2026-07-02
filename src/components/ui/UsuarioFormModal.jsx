@@ -82,9 +82,9 @@ const UsuarioFormModal = ({ open, onClose, onSuccess, usuario, rolesList }) => {
 
     try {
       if (isEdit) {
-        await api.put(`/api/usuarios/${usuario.id_usuario}`, data);
+        await api.put(`/api/v1/usuarios/${usuario.id_usuario}`, data);
       } else {
-        await api.post('/api/usuarios', data);
+        await api.post('/api/v1/usuarios', data);
       }
       setDialog({
         open: true, type: 'success', title: 'Operación exitosa',

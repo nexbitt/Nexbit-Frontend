@@ -63,9 +63,9 @@ const ProveedorFormModal = ({ open, onClose, onSuccess, proveedor }) => {
 
     try {
       if (isEdit) {
-        await api.put(`/api/proveedores/${proveedor.id_proveedor}`, data);
+        await api.put(`/api/v1/proveedores/${proveedor.id_proveedor}`, data);
       } else {
-        await api.post('/api/proveedores', data);
+        await api.post('/api/v1/proveedores', data);
       }
       setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: `Proveedor ${isEdit ? 'actualizado' : 'creado'} correctamente.`, onConfirm: () => {
         setDialog(prev => ({ ...prev, open: false }));

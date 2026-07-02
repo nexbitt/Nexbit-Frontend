@@ -63,9 +63,9 @@ const CategoriaFormModal = ({ open, onClose, onSuccess, categoria }) => {
 
     try {
       if (isEdit) {
-        await api.put(`/api/categorias/${categoria.id_categoria}`, data);
+        await api.put(`/api/v1/categorias/${categoria.id_categoria}`, data);
       } else {
-        await api.post('/api/categorias', data);
+        await api.post('/api/v1/categorias', data);
       }
       setNombre(''); setDescripcion(''); setActivo(1);
       setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: `Categoría ${isEdit ? 'actualizada' : 'creada'} correctamente.`, onConfirm: () => {
