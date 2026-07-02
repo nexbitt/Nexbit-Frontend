@@ -109,7 +109,7 @@ const AdminCheckoutModal = ({ open, onClose, onSuccess }) => {
     const formData = new FormData();
     formData.append('imagen', selectedFile);
     try {
-      const res = await api.post('/api/v1/uploads/cloudinary', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const res = await api.post('/api/v1/uploads/cloudinary', formData);
       if (res.data?.url) {
         setUploadedUrl(res.data.url);
         setUploadedPublicId(res.data.public_id || '');

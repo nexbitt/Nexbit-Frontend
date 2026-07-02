@@ -213,13 +213,9 @@ const Productos = ({ variant }) => {
 
     try {
       if (enEdicion) {
-        await api.put(`${URL_API}/${idProducto}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await api.put(`${URL_API}/${idProducto}`, formData);
       } else {
-        await api.post(URL_API, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await api.post(URL_API, formData);
       }
       limpiarFormulario();
       listar();
