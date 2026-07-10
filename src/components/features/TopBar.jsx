@@ -96,13 +96,12 @@ const TopBar = ({ onLogout, variant }) => {
               </button>
             )}
 
-            {/* Carrito — botón principal */}
+            {/* Carrito — solo icono */}
             <button
               className={`store-cart-btn${cartBump ? ' store-cart-btn--bump' : ''}`}
               onClick={() => navigate(`${basePath}/carrito`)}
               title="Ver carrito"
             >
-              {/* SVG inline garantiza visibilidad sin importar CSS global */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="20" height="20"
@@ -112,7 +111,6 @@ const TopBar = ({ onLogout, variant }) => {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                style={{ flexShrink: 0 }}
               >
                 <circle cx="9" cy="21" r="1"/>
                 <circle cx="20" cy="21" r="1"/>
@@ -121,7 +119,6 @@ const TopBar = ({ onLogout, variant }) => {
               {totalItems > 0 && (
                 <span className="store-cart-badge">{totalItems > 99 ? '99+' : totalItems}</span>
               )}
-              <span className="store-cart-label">Carrito</span>
             </button>
 
             {/* Logout (solo cliente) */}
