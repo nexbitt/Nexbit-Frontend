@@ -209,6 +209,8 @@ const Productos = ({ variant }) => {
       formData.append('imagen', imagenFile);
     } else if (imagenUrlActual) {
       formData.append('imagen_url', imagenUrlActual);
+    } else {
+      formData.append('imagen_url', '');
     }
 
     try {
