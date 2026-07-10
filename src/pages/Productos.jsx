@@ -56,6 +56,7 @@ const Productos = ({ variant }) => {
   const [searchTerm, setSearchTerm]     = useState("");
   const [filterEstado, setFilterEstado]  = useState("ALL");
   const [filterCategoria, setFilterCategoria] = useState("ALL");
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
   const [idProducto, setIdProducto]     = useState(null);
   const [categoriaId, setCategoriaId]   = useState("");
@@ -79,6 +80,7 @@ const Productos = ({ variant }) => {
   const [imagenPreview, setImagenPreview] = useState(null);
   const [imagenUrlActual, setImagenUrlActual] = useState(null);
   const fileInputRef = useRef(null);
+  const filterDropdownRef = useRef(null);
 
   const handleNameKeyDown = (e) => {
     if (e.key.length === 1 && !NAME_REGEX.test(e.key)) e.preventDefault();
@@ -114,15 +116,26 @@ const Productos = ({ variant }) => {
   };
 
   const listarDependencias = () => {
-    if (!isAdminView) return;
     api.get(URL_CATEGORIAS).then(res => setCategoriasList(res.data)).catch(console.error);
-    api.get(URL_PROVEEDORES).then(res => setProveedoresList(res.data)).catch(console.error);
+    if (isAdminView) {
+      api.get(URL_PROVEEDORES).then(res => setProveedoresList(res.data)).catch(console.error);
+    }
   };
 
   useEffect(() => {
     listar();
     listarDependencias();
   }, [isAdminView]);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target)) {
+        setShowFilterDropdown(false);
+      }
+    };
+    if (showFilterDropdown) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showFilterDropdown]);
 
   const verDetalles = (p) => {
     setSelectedProduct(p);
@@ -273,22 +286,75 @@ const Productos = ({ variant }) => {
   if (!isAdminView) {
     return (
       <div className="storefront-container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h1 className="module-title-table" style={{ margin: 0, fontSize: '1.5rem' }}>Resultados de búsqueda</h1>
-          <div className="search-bar-input-wrap" style={{ maxWidth: 320 }}>
-            <Search size={16} className="search-bar-icon" />
-            <input
-              type="text"
-              className="search-bar-input"
-              placeholder="Buscar por nombre, categoría o proveedor..."
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); }}
-            />
-            {searchTerm && (
-              <button className="search-bar-clear" onClick={() => setSearchTerm('')}>
-                <X size={16} />
+        <div style={{ marginBottom: '20px' }}>
+          <div className="search-filter-container">
+            <div className="search-input-wrapper">
+              <span className="icon-lupa">
+                <Search size={16} />
+              </span>
+              <input
+                type="text"
+                placeholder="Buscar por nombre, categoría o proveedor..."
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); }}
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  style={{
+                    position: 'absolute', right: '8px', top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    display: 'flex', padding: '4px', borderRadius: '4px',
+                    color: '#94a3b8', transition: 'all 0.15s'
+                  }}
+                  onMouseOver={e => e.currentTarget.style.color = '#475569'}
+                  onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <div ref={filterDropdownRef} style={{ position: 'relative' }}>
+              <button
+                className={`btn-filter${filterCategoria !== 'ALL' ? ' active' : ''}`}
+                onClick={() => setShowFilterDropdown(prev => !prev)}
+                title="Filtrar por categoría"
+              >
+                <Filter size={16} />
               </button>
-            )}
+              {showFilterDropdown && (
+                <div style={{
+                  position: 'absolute', top: '44px', right: 0, zIndex: 50,
+                  background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.1)', minWidth: '200px',
+                  padding: '6px', overflow: 'hidden'
+                }}>
+                  <button
+                    onClick={() => { setFilterCategoria('ALL'); setShowFilterDropdown(false); }}
+                    style={{
+                      display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px',
+                      border: 'none', background: filterCategoria === 'ALL' ? '#f1f5f9' : 'transparent',
+                      borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem',
+                      fontWeight: filterCategoria === 'ALL' ? 700 : 400, color: '#111827'
+                    }}
+                  >Todas las categorías</button>
+                  {categoriasList.map(c => (
+                    <button
+                      key={c.id_categoria}
+                      onClick={() => { setFilterCategoria(String(c.id_categoria)); setShowFilterDropdown(false); }}
+                      style={{
+                        display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px',
+                        border: 'none', background: filterCategoria === String(c.id_categoria) ? '#f1f5f9' : 'transparent',
+                        borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem',
+                        fontWeight: filterCategoria === String(c.id_categoria) ? 700 : 400,
+                        color: '#111827', marginTop: '2px'
+                      }}
+                    >{c.nombre}</button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

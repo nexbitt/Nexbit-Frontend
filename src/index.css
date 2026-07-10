@@ -590,6 +590,85 @@ input:focus, select:focus, .search-input:focus, .search-select:focus {
   animation: fadeIn 0.6s ease-out;
 }
 
+.search-filter-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-input-wrapper .icon-lupa {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-wrapper input {
+  width: 100%;
+  padding: 0.55rem 0.85rem 0.55rem 38px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #111827;
+  font-size: 0.85rem;
+  font-family: inherit;
+  transition: all 0.15s;
+  box-sizing: border-box;
+}
+
+.search-input-wrapper input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.search-input-wrapper input::placeholder {
+  color: #94a3b8;
+}
+
+.btn-filter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.btn-filter:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #111827;
+}
+
+.btn-filter.active {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+
+.btn-filter.active:hover {
+  background: #1e293b;
+}
+
 .product-horizontal-card {
   display: flex;
   background-color: var(--card-bg);
