@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Fingerprint, ShieldCheck, User, IdCard, Mail, Lock, Eye, EyeOff, ToggleRight, Loader2 } from 'lucide-react';
+import { Fingerprint, ShieldCheck, User, IdCard, Mail, Lock, Eye, EyeOff, ToggleRight, Loader2, Phone } from 'lucide-react';
 import api from '../../api';
 import { useModalScroll } from '../../hooks/useModalScroll';
 import CustomDialog from './CustomDialog';
@@ -32,6 +32,8 @@ const UsuarioFormModal = ({ open, onClose, onSuccess, usuario, rolesList }) => {
   const [rolId, setRolId] = useState('');
   const [nombre, setNombre] = useState('');
   const [numDoc, setNumDoc] = useState('');
+  const [tipoDoc, setTipoDoc] = useState('');
+  const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [activo, setActivo] = useState(1);
@@ -51,13 +53,15 @@ const UsuarioFormModal = ({ open, onClose, onSuccess, usuario, rolesList }) => {
       setRolId(usuario.rol_id);
       setNombre(usuario.nombre || '');
       setNumDoc(usuario.numero_documento || '');
+      setTipoDoc(usuario.tipo_documento || '');
+      setTelefono(usuario.telefono || '');
       setEmail(usuario.email || '');
       setPassword('');
       setActivo(usuario.activo);
     } else {
       setIdUsuario(null);
       setRolId(rolesList.length > 0 ? rolesList[0].id_rol : 1);
-      setNombre(''); setNumDoc(''); setEmail(''); setPassword(''); setActivo(1);
+      setNombre(''); setNumDoc(''); setTipoDoc(''); setTelefono(''); setEmail(''); setPassword(''); setActivo(1);
     }
     setShowPassword(false);
   }, [open, usuario, rolesList]);
@@ -77,7 +81,7 @@ const UsuarioFormModal = ({ open, onClose, onSuccess, usuario, rolesList }) => {
       return;
     }
     setSubmitting(true);
-    const data = { rol_id: rolId, nombre: nombre.trim(), email: email.trim(), numero_documento: numDoc.trim(), activo };
+    const data = { rol_id: rolId, nombre: nombre.trim(), email: email.trim(), tipo_documento: tipoDoc, numero_documento: numDoc.trim(), telefono: telefono.trim(), activo };
     if (!isEdit) data.password = password;
 
     try {
@@ -165,10 +169,23 @@ const UsuarioFormModal = ({ open, onClose, onSuccess, usuario, rolesList }) => {
               </div>
             </div>
             <div>
-              <label style={LABEL_STYLE}>Número de Documento *</label>
+              <label style={LABEL_STYLE}>Número de Documento</label>
               <div style={INPUT_WRAPPER}>
                 <IdCard size={14} style={ICON_LEFT} />
                 <input value={numDoc} onChange={e => setNumDoc(e.target.value)} onFocus={handleFocus} onBlur={handleBlur} style={INPUT_STYLE} placeholder="1234567890" />
+              </div>
+            </div>
+            <div>
+              <label style={LABEL_STYLE}>Tipo de Documento</label>
+              <div style={INPUT_WRAPPER}>
+                <IdCard size={14} style={{ ...ICON_LEFT, left: '15px' }} />
+                <select value={tipoDoc} onChange={e => setTipoDoc(e.target.value)} onFocus={handleFocus} onBlur={handleBlur} style={SELECT_STYLE}>
+                  <option value="">Seleccionar...</option>
+                  <option value="CC">CC - Cédula de Ciudadanía</option>
+                  <option value="CE">CE - Cédula de Extranjería</option>
+                  <option value="TI">TI - Tarjeta de Identidad</option>
+                  <option value="PASAPORTE">Pasaporte</option>
+                </select>
               </div>
             </div>
 
@@ -218,6 +235,13 @@ const UsuarioFormModal = ({ open, onClose, onSuccess, usuario, rolesList }) => {
                   <option value={1}>Activo</option>
                   <option value={0}>Inactivo</option>
                 </select>
+              </div>
+            </div>
+            <div>
+              <label style={LABEL_STYLE}>Teléfono</label>
+              <div style={INPUT_WRAPPER}>
+                <Phone size={14} style={ICON_LEFT} />
+                <input value={telefono} onChange={e => setTelefono(e.target.value)} onFocus={handleFocus} onBlur={handleBlur} style={INPUT_STYLE} placeholder="+57 300 123 4567" />
               </div>
             </div>
           </div>
