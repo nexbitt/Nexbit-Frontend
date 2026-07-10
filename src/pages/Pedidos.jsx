@@ -18,6 +18,8 @@ const URL_API = "/api/v1/pedidos";
 const URL_USUARIOS = "/api/v1/usuarios";
 const URL_ADMIN = "/api/v1/admin";
 
+const ESTADOS_TICKET_VISIBLE = ['APROBADO', 'ASIGNADO', 'EN_CAMINO', 'ENTREGADO'];
+
 const Pedidos = ({ variant }) => {
   const [pedidos, setPedidos] = useState([]);
   const [usuariosList, setUsuariosList] = useState([]);
@@ -421,12 +423,14 @@ const Pedidos = ({ variant }) => {
                       <Eye size={16} /> Ver Detalles
                     </button>
 
-                    <button
-                      className="btn-order-action btn-download"
-                      onClick={() => descargarTicket(p.id_pedido)}
-                    >
-                      <Download size={16} /> Ticket
-                    </button>
+                    {ESTADOS_TICKET_VISIBLE.includes(p.estado) && (
+                      <button
+                        className="btn-order-action btn-download"
+                        onClick={() => descargarTicket(p.id_pedido)}
+                      >
+                        <Download size={16} /> Ticket
+                      </button>
+                    )}
 
                     {p.estado === ORDER_STATUS.PENDIENTE && (
                       <>
@@ -494,7 +498,7 @@ const Pedidos = ({ variant }) => {
                 {pedidoDetalle ? `Pedido #${String(pedidoDetalle.id_pedido).padStart(6, '0')}` : 'Cargando...'}
               </h2>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                {pedidoDetalle && (
+                {pedidoDetalle && (isAdminView || ESTADOS_TICKET_VISIBLE.includes(pedidoDetalle.estado)) && (
                   <button
                     onClick={() => { setShowDetailModal(false); descargarTicket(pedidoDetalle.id_pedido); }}
                     style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
@@ -804,13 +808,17 @@ const Pedidos = ({ variant }) => {
                     >
                       <Eye size={18} color="var(--primary)" />
                     </button>
-                    <button
-                      className="btn-icon"
-                      onClick={() => descargarTicket(p.id_pedido)}
-                      title="Descargar Ticket"
-                    >
-                      <Download size={18} color="var(--primary)" />
-                    </button>
+                    {isAdminView || ESTADOS_TICKET_VISIBLE.includes(p.estado) ? (
+                      <button
+                        className="btn-icon"
+                        onClick={() => descargarTicket(p.id_pedido)}
+                        title="Descargar Ticket"
+                      >
+                        <Download size={18} color="var(--primary)" />
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>—</span>
+                    )}
                   </td>
                 </tr>
               ))}
