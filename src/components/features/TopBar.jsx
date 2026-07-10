@@ -8,26 +8,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  Search, ShoppingCart, LogIn, LogOut,
-  Globe, Home, ChevronDown, Store,
-  ShoppingBag, ClipboardList, Menu, X,
+  ShoppingCart, LogIn, LogOut,
+  Home, Store,
+  ClipboardList, Menu, X,
   LifeBuoy, UserCircle
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { useLanguage } from '../../context/LanguageContext';
 
 const TopBar = ({ onLogout, variant }) => {
   const { totalItems } = useCart();
   const { isAuthenticated } = useAuth(); // <--- Usar estado real
-  const { language, changeLanguage } = useLanguage();
   const navigate     = useNavigate();
   const [scrolled, setScrolled]     = useState(false);
-  const [langOpen, setLangOpen]     = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [cartBump, setCartBump]     = useState(false);
   const prevTotalRef = useRef(totalItems);
-  const langRef = useRef(null);
 
   const basePath  = variant === 'cliente' ? '/cliente' : '/usuario';
   const isCliente = variant === 'cliente';
@@ -48,17 +44,6 @@ const TopBar = ({ onLogout, variant }) => {
     }
     prevTotalRef.current = totalItems;
   }, [totalItems]);
-
-  /* ── Cierra lang dropdown al click fuera ────────────── */
-  useEffect(() => {
-    const handler = (e) => {
-      if (langRef.current && !langRef.current.contains(e.target)) {
-        setLangOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   const NAV_LINKS = [
     { to: `${basePath}/inicio`,    label: 'Inicio',      Icon: Home         },
@@ -90,51 +75,10 @@ const TopBar = ({ onLogout, variant }) => {
             <span className="store-logo-text">Nexbit</span>
           </div>
 
-          {/* Barra de búsqueda central */}
-          <div className="store-search-bar">
-            <Search size={16} className="store-search-icon" />
-            <input
-              className="store-search-input"
-              type="text"
-              placeholder="Buscar productos, categorías..."
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.target.value.trim()) {
-                  navigate(`${basePath}/productos`);
-                }
-              }}
-            />
-          </div>
+          <div style={{ flex: 1 }} />
 
           {/* Acciones derechas */}
           <div className="store-header-actions">
-
-            {/* Idioma */}
-            <div ref={langRef} className="store-lang-wrap">
-              <button
-                className="store-action-btn store-action-btn--text"
-                onClick={() => setLangOpen(o => !o)}
-                title="Idioma"
-              >
-                <Globe size={17} />
-                <span className="store-action-label">{language.toUpperCase()}</span>
-                <ChevronDown size={12} style={{
-                  transition: 'transform 0.2s',
-                  transform: langOpen ? 'rotate(180deg)' : 'none'
-                }} />
-              </button>
-              {langOpen && (
-                <div className="store-lang-dropdown">
-                  <button
-                    className={`store-lang-opt${language === 'es' ? ' active' : ''}`}
-                    onClick={() => { changeLanguage('es'); setLangOpen(false); }}
-                  >Español</button>
-                  <button
-                    className={`store-lang-opt${language === 'en' ? ' active' : ''}`}
-                    onClick={() => { changeLanguage('en'); setLangOpen(false); }}
-                  >English</button>
-                </div>
-              )}
-            </div>
 
             {/* Cuenta */}
             {isAuthenticated ? (
