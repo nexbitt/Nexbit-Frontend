@@ -39,7 +39,7 @@ const PerfilRepartidor = () => {
 
   const cargarPerfil = () => {
     setLoading(true);
-    api.get(`/api/v1/usuarios/${user.id_usuario}`)
+    api.get(`/api/v1/usuarios/me`)
       .then(res => {
         const u = res.data;
         if (u) {
