@@ -87,6 +87,7 @@ const Categorias = () => {
                 <th>ID</th>
                 <th>Nombre Categoría</th>
                 <th>Descripción</th>
+                <th>Atributos</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -95,7 +96,24 @@ const Categorias = () => {
                 <tr key={c.id_categoria}>
                   <td>{c.id_categoria}</td>
                   <td>{c.nombre}</td>
-                  <td>{c.descripcion}</td>
+                  <td>{c.descripcion_texto || c.descripcion || ''}</td>
+                  <td>
+                    {c.atributos && c.atributos.length > 0 ? (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                        {c.atributos.map((a, i) => (
+                          <span key={i} style={{
+                            display: 'inline-block', padding: '2px 8px', background: '#F3F4F6',
+                            borderRadius: '12px', fontSize: '11px', border: '1px solid #E5E7EB',
+                            color: '#374151'
+                          }}>
+                            {a.nombre}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>—</span>
+                    )}
+                  </td>
                   <td className="actions-cell">
                     <button className="btn-icon" onClick={() => seleccionarCategoria(c)}>
                       <Pencil size={18} color="var(--primary)" />

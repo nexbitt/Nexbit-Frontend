@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Tag, Loader2 } from 'lucide-react';
+import { Tag, Loader2, Plus, X } from 'lucide-react';
 import api from '../../api';
 import { useModalScroll } from '../../hooks/useModalScroll';
 import CustomDialog from './CustomDialog';
@@ -32,6 +32,8 @@ const INPUT_WRAPPER = { position: 'relative' };
 const CategoriaFormModal = ({ open, onClose, onSuccess, categoria }) => {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  const [atributos, setAtributos] = useState([]);
+  const [nuevoAtributo, setNuevoAtributo] = useState({ nombre: '', tipo: 'texto' });
   const [activo, setActivo] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [dialog, setDialog] = useState({ open: false, type: 'success', title: '', message: '', onConfirm: null });
@@ -45,12 +47,33 @@ const CategoriaFormModal = ({ open, onClose, onSuccess, categoria }) => {
     if (nameInputRef.current) setTimeout(() => nameInputRef.current.focus(), 100);
     if (categoria) {
       setNombre(categoria.nombre || '');
-      setDescripcion(categoria.descripcion || '');
+      // Intentar parsear atributos desde la descripción JSON
+      let textoDesc = categoria.descripcion || '';
+      let attrs = [];
+      try {
+        const parsed = JSON.parse(categoria.descripcion);
+        if (parsed && typeof parsed === 'object' && Array.isArray(parsed.atributos)) {
+          textoDesc = parsed.texto || '';
+          attrs = parsed.atributos;
+        }
+      } catch { /* texto plano */ }
+      setDescripcion(textoDesc);
+      setAtributos(attrs);
       setActivo(categoria.activo !== undefined ? (categoria.activo ? 1 : 0) : 1);
     } else {
-      setNombre(''); setDescripcion(''); setActivo(1);
+      setNombre(''); setDescripcion(''); setAtributos([]); setActivo(1);
     }
   }, [open, categoria]);
+
+  const agregarAtributo = () => {
+    if (!nuevoAtributo.nombre.trim()) return;
+    setAtributos([...atributos, { ...nuevoAtributo, nombre: nuevoAtributo.nombre.trim() }]);
+    setNuevoAtributo({ nombre: '', tipo: 'texto' });
+  };
+
+  const quitarAtributo = (index) => {
+    setAtributos(atributos.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async () => {
     const trimmed = nombre.trim();
@@ -59,7 +82,12 @@ const CategoriaFormModal = ({ open, onClose, onSuccess, categoria }) => {
       return;
     }
     setSubmitting(true);
-    const data = { nombre: trimmed, descripcion: descripcion.trim(), activo: activo === 1 };
+    const data = {
+      nombre: trimmed,
+      descripcion: descripcion.trim(),
+      atributos: atributos.length > 0 ? atributos : undefined,
+      activo: activo === 1
+    };
 
     try {
       if (isEdit) {
@@ -133,6 +161,62 @@ const CategoriaFormModal = ({ open, onClose, onSuccess, categoria }) => {
                 onFocus={handleFocus}
                 onBlur={handleBlur}
               />
+            </div>
+
+            {/* ── ATRIBUTOS DINÁMICOS ── */}
+            <div>
+              <label style={LABEL_STYLE}>Atributos de la Categoría</label>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <input
+                  value={nuevoAtributo.nombre}
+                  onChange={e => setNuevoAtributo({ ...nuevoAtributo, nombre: e.target.value })}
+                  placeholder="Ej: Marca, Tamaño, Color..."
+                  style={{ flex: 1, height: '36px', padding: '0 10px', border: '1px solid #E5E7EB', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); agregarAtributo(); } }}
+                />
+                <select
+                  value={nuevoAtributo.tipo}
+                  onChange={e => setNuevoAtributo({ ...nuevoAtributo, tipo: e.target.value })}
+                  style={{ width: '100px', height: '36px', padding: '0 8px', border: '1px solid #E5E7EB', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+                >
+                  <option value="texto">Texto</option>
+                  <option value="numero">Número</option>
+                  <option value="booleano">Sí/No</option>
+                </select>
+                <button
+                  onClick={agregarAtributo}
+                  disabled={!nuevoAtributo.nombre.trim()}
+                  style={{
+                    height: '36px', width: '36px', borderRadius: '6px', border: 'none',
+                    background: nuevoAtributo.nombre.trim() ? '#111827' : '#E5E7EB',
+                    color: nuevoAtributo.nombre.trim() ? '#fff' : '#9CA3AF',
+                    cursor: nuevoAtributo.nombre.trim() ? 'pointer' : 'not-allowed',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+              {atributos.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {atributos.map((attr, i) => (
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      padding: '4px 10px', background: '#F3F4F6', borderRadius: '20px',
+                      fontSize: '12px', border: '1px solid #E5E7EB'
+                    }}>
+                      <strong>{attr.nombre}</strong>
+                      <span style={{ color: '#6B7280', fontSize: '10px' }}>({attr.tipo})</span>
+                      <button
+                        onClick={() => quitarAtributo(i)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: '#9CA3AF' }}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>

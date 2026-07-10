@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import api from '../api';
-import { Users, ArrowLeft } from 'lucide-react';
+import { Users, ArrowLeft, Phone, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Register() {
@@ -14,7 +14,11 @@ export default function Register() {
         tipo_documento: '',
         numero_documento: '',
         telefono: '',
-        direccion: ''
+        direccion: '',
+        // Info de emergencia
+        emergencia_nombre: '',
+        emergencia_telefono: '',
+        emergencia_parentesco: ''
     });
 
     // Estados para UI
@@ -57,7 +61,20 @@ export default function Register() {
 
         setLoading(true);
         try {
-            await api.post('/api/v1/usuarios', formData);
+            // Enviar info de emergencia como objeto anidado
+            const payload = {
+                ...formData,
+                emergencia: formData.emergencia_nombre ? {
+                    nombre: formData.emergencia_nombre,
+                    telefono: formData.emergencia_telefono,
+                    parentesco: formData.emergencia_parentesco
+                } : undefined
+            };
+            delete payload.emergencia_nombre;
+            delete payload.emergencia_telefono;
+            delete payload.emergencia_parentesco;
+
+            await api.post('/api/v1/usuarios', payload);
             setSuccess('¡Usuario registrado exitosamente! Ya puedes iniciar sesión.');
             setFormData({
                 rol_id: '',
@@ -67,7 +84,10 @@ export default function Register() {
                 tipo_documento: '',
                 numero_documento: '',
                 telefono: '',
-                direccion: ''
+                direccion: '',
+                emergencia_nombre: '',
+                emergencia_telefono: '',
+                emergencia_parentesco: ''
             });
         } catch (err) {
             setError(err.response?.data?.message || 'Error al intentar registrar el usuario. Verifica los datos.');
@@ -134,6 +154,27 @@ export default function Register() {
                     <div className="input-field">
                         <label>Dirección</label>
                         <input type="text" name="direccion" value={formData.direccion} onChange={handleChange} placeholder="Ej: Calle 123 #45-67" />
+                    </div>
+
+                    {/* ── INFORMACIÓN DE EMERGENCIA ── */}
+                    <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem', padding: '1rem', background: '#FFF7ED', borderRadius: '8px', border: '1px solid #FED7AA' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#9A3412', fontWeight: 600, fontSize: '0.9rem' }}>
+                            <Phone size={16} /> Información de Emergencia (opcional)
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                            <div className="input-field" style={{ margin: 0 }}>
+                                <label>Nombre de Contacto</label>
+                                <input type="text" name="emergencia_nombre" value={formData.emergencia_nombre} onChange={handleChange} placeholder="Ej: María Pérez" />
+                            </div>
+                            <div className="input-field" style={{ margin: 0 }}>
+                                <label>Teléfono de Emergencia</label>
+                                <input type="text" name="emergencia_telefono" value={formData.emergencia_telefono} onChange={handleChange} placeholder="Ej: 300 987 6543" />
+                            </div>
+                            <div className="input-field" style={{ margin: 0 }}>
+                                <label>Parentesco</label>
+                                <input type="text" name="emergencia_parentesco" value={formData.emergencia_parentesco} onChange={handleChange} placeholder="Ej: Madre, Padre, Hermano" />
+                            </div>
+                        </div>
                     </div>
 
                     <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>

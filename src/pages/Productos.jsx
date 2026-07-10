@@ -222,7 +222,12 @@ const Productos = ({ variant }) => {
       setDialog({ open: true, type: 'success', title: 'Operación exitosa', message: 'El registro ha sido almacenado de manera segura en la base de datos y actualizado en los listados generales.' });
     } catch (err) {
       console.error("Error al guardar:", err);
-      setDialog({ open: true, type: 'error', title: 'Error en la operación', message: err.response?.data?.message || err.message });
+      const status = err.response?.status;
+      let errorMsg = err.response?.data?.message || err.message;
+      if (status === 409) {
+        errorMsg = '⚠️ ' + errorMsg;
+      }
+      setDialog({ open: true, type: 'error', title: status === 409 ? 'Nombre duplicado' : 'Error en la operación', message: errorMsg });
     } finally {
       setGuardando(false);
     }
@@ -359,13 +364,21 @@ const Productos = ({ variant }) => {
                 </div>
 
                 <div>
-                  <h1 style={{ fontSize: '1.8rem', marginBottom: '10px', color: '#0f172a' }}>{selectedProduct.nombre}</h1>
-                  <div style={{ display: 'inline-block', padding: '4px 12px', background: '#dbeafe', color: '#1e40af', borderRadius: '12px', fontSize: '0.85rem', marginBottom: '15px' }}>
-                    {selectedProduct.categoria_nombre || 'General'}
-                  </div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '20px' }}>
-                    {formatCOP(selectedProduct.precio_venta)}
-                  </div>
+                    <h1 style={{ fontSize: '1.8rem', marginBottom: '10px', color: '#0f172a' }}>{selectedProduct.nombre}</h1>
+                    {selectedProduct.codigo_serie && (
+                      <div style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#64748b', marginBottom: '8px' }}>
+                        #{selectedProduct.codigo_serie}
+                      </div>
+                    )}
+                    <div style={{ display: 'inline-block', padding: '4px 12px', background: '#dbeafe', color: '#1e40af', borderRadius: '12px', fontSize: '0.85rem', marginBottom: '15px' }}>
+                      {selectedProduct.categoria_nombre || 'General'}
+                    </div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '20px' }}>
+                      {formatCOP(selectedProduct.precio_venta)}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '15px' }}>
+                      IVA {selectedProduct.iva_porcentaje || '19%'} • Precio con IVA: <strong>{selectedProduct.precio_con_iva ? formatCOP(selectedProduct.precio_con_iva) : ''}</strong>
+                    </div>
                   <div style={{ marginBottom: '20px' }}>
                     <h4 style={{ textTransform: 'uppercase', fontSize: '0.75rem', color: '#64748b', marginBottom: '8px', letterSpacing: '0.5px' }}>Descripción completa</h4>
                     <p style={{ fontSize: '0.95rem', color: '#475569', lineHeight: '1.6' }}>{selectedProduct.descripcion || 'No hay descripción disponible para este artículo.'}</p>
@@ -377,6 +390,9 @@ const Productos = ({ variant }) => {
                       <li style={{ marginBottom: '6px' }}>• <strong>Disponibilidad:</strong> {selectedProduct.stock_actual} unidades</li>
                       <li style={{ marginBottom: '6px' }}>• <strong>Proveedor:</strong> {selectedProduct.proveedor_nombre || 'No especificado'}</li>
                       <li>• <strong>Garantía:</strong> 6 meses con el fabricante</li>
+                      {selectedProduct.ubicacion && (
+                        <li style={{ marginBottom: '6px' }}>• <strong>Ubicación:</strong> {selectedProduct.ubicacion}</li>
+                      )}
                     </ul>
                   </div>
                 </div>
@@ -450,6 +466,8 @@ const Productos = ({ variant }) => {
                 <th>Proveedor</th>
                 <th>Stock</th>
                 <th>Precio Venta</th>
+                <th>IVA</th>
+                <th>Ubicación</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -463,7 +481,14 @@ const Productos = ({ variant }) => {
                       <ProductoImagen src={p.imagen_url} alt={p.nombre} iconSize={24} />
                     </div>
                   </td>
-                  <td>{p.nombre}</td>
+                  <td>
+                    <div>{p.nombre}</div>
+                    {p.codigo_serie && (
+                      <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontFamily: 'monospace', marginTop: '2px' }}>
+                        {p.codigo_serie}
+                      </div>
+                    )}
+                  </td>
                   <td>{p.categoria_nombre}</td>
                   <td>{p.proveedor_nombre || <span style={{ color: '#aaa', fontStyle: 'italic' }}>Ninguno</span>}</td>
                   <td>
@@ -475,6 +500,16 @@ const Productos = ({ variant }) => {
                     </span>
                   </td>
                   <td>{formatCOP(p.precio_venta)}</td>
+                  <td>
+                    <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{p.iva_porcentaje || '19%'}</span>
+                    <br />
+                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{p.precio_con_iva ? formatCOP(p.precio_con_iva) : ''}</span>
+                  </td>
+                  <td>
+                    <span style={{ fontSize: '0.85rem', color: p.ubicacion ? '#334155' : '#94a3b8' }}>
+                      {p.ubicacion || 'Sin ubicación'}
+                    </span>
+                  </td>
                   <td>
                     <button className={`status-toggle ${p.activo ? 'is-active' : 'is-inactive'}`}>
                       {p.activo ? 'Activo' : 'Inactivo'}
